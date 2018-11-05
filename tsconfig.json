@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "es6",
+		"outDir": "build",
+		"preserveConstEnums": true,
+		"declaration": true,
+		"pretty": true,
+		"removeComments": true,
+		"sourceMap": true
+	}
+}
