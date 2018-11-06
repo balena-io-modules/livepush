@@ -9,7 +9,9 @@
   "scripts": {
     "clean": "rm -rf build",
     "prepublish": "npm run build",
-    "precommit": "npm run build && npm run test",
+    "precommit": "lint-staged",
+    "prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"{lib}/**/*.ts\"",
+    "lint": "resin-lint --typescript lib/ && tsc --noEmit",
     "build": "npm run clean && tsc --project tsconfig.publish.json",
     "build:test": "npm run clean && tsc --project .",
     "test": "npm run build:test && mocha build/test/*.spec.js"
@@ -30,8 +32,11 @@
     "@types/tar-stream": "^1.6.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
+    "lint-staged": "^8.0.4",
     "mocha": "^5.2.0",
+    "prettier": "^1.14.3",
     "require-npm4-to-publish": "^1.0.0",
+    "resin-lint": "^2.0.1",
     "sinon": "^6.1.5",
     "typescript": "^3.0.1"
   },
