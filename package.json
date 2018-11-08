@@ -8,13 +8,15 @@
   },
   "scripts": {
     "clean": "rm -rf build",
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
+    "prepublish": "require-npm4-to-publish",
     "precommit": "lint-staged",
-    "prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"{lib}/**/*.ts\"",
-    "lint": "resin-lint --typescript lib/ && tsc --noEmit",
-    "build": "npm run clean && tsc --project tsconfig.publish.json",
+    "prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"{lib,test}/**/*.ts\"",
+    "lint": "resin-lint --typescript lib/ test/ && tsc --noEmit",
+    "build": "npm run clean && npm run prettify && tsc --project tsconfig.publish.json",
     "build:test": "npm run clean && tsc --project .",
-    "test": "npm run build:test && mocha build/test/*.spec.js"
+    "test": "npm run prettify && npm run lint && npm run test:fast",
+    "test:fast": "npm run build:test && mocha build/test/*.spec.js"
   },
   "author": "Cameron Diver <cameron@balena.io>",
   "license": "Apache-2.0",
@@ -44,6 +46,7 @@
     "bluebird": "^3.5.1",
     "docker-file-parser": "^1.0.3",
     "dockerode": "^2.5.6",
+    "husky": "^1.1.3",
     "lodash": "^4.17.10",
     "minimatch": "^3.0.4",
     "typed-error": "^3.0.1"
