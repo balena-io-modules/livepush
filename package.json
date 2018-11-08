@@ -2,7 +2,7 @@
   "name": "livepush",
   "version": "0.2.0",
   "description": "Update your containers live!",
-  "main": "index.js",
+  "main": "build/index.js",
   "directories": {
     "lib": "lib"
   },
