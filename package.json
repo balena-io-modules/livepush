@@ -1,6 +1,6 @@
 {
   "name": "livepush",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Update your containers live!",
   "main": "index.js",
   "directories": {
