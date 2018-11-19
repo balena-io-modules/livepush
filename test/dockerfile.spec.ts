@@ -22,9 +22,7 @@ const { expect } = chai;
 import Dockerfile from '../lib/dockerfile';
 
 describe('Dockerfile inspection', () => {
-
 	describe('Action groups', () => {
-
 		it('should correctly generate simple action groups', () => {
 			const dockerfileContent = [
 				'FROM baseimage',
@@ -42,7 +40,11 @@ describe('Dockerfile inspection', () => {
 			expect(actionGroup.fileDependencies).to.have.length(0);
 
 			expect(actionGroup.commands).to.have.length(3);
-			expect(actionGroup.commands).to.deep.equal([ 'somecommand', 'anothercommand', 'multi arg command' ]);
+			expect(actionGroup.commands).to.deep.equal([
+				'somecommand',
+				'anothercommand',
+				'multi arg command',
+			]);
 		});
 
 		it('should handle simple copies', () => {
@@ -61,7 +63,7 @@ describe('Dockerfile inspection', () => {
 			let actionGroup = dockerfile.actionGroups[0];
 			expect(actionGroup.workDir).to.equal('/');
 			expect(actionGroup.fileDependencies).to.have.length(0);
-			expect(actionGroup.commands).to.deep.equal([ 'somecommand' ]);
+			expect(actionGroup.commands).to.deep.equal(['somecommand']);
 
 			actionGroup = dockerfile.actionGroups[1];
 			expect(actionGroup.workDir).to.equal('/');
@@ -70,8 +72,10 @@ describe('Dockerfile inspection', () => {
 				localPath: 'a.ts',
 				containerPath: '/b.ts',
 			});
-			expect(actionGroup.commands).to.deep.equal([ 'anothercommand', 'multi arg command' ]);
-
+			expect(actionGroup.commands).to.deep.equal([
+				'anothercommand',
+				'multi arg command',
+			]);
 		});
 
 		it('should handle copies with arguments', () => {
@@ -90,7 +94,7 @@ describe('Dockerfile inspection', () => {
 			let actionGroup = dockerfile.actionGroups[0];
 			expect(actionGroup.workDir).to.equal('/');
 			expect(actionGroup.fileDependencies).to.have.length(0);
-			expect(actionGroup.commands).to.deep.equal([ 'somecommand' ]);
+			expect(actionGroup.commands).to.deep.equal(['somecommand']);
 
 			actionGroup = dockerfile.actionGroups[1];
 			expect(actionGroup.workDir).to.equal('/');
@@ -99,8 +103,10 @@ describe('Dockerfile inspection', () => {
 				localPath: 'a.ts',
 				containerPath: '/b.ts',
 			});
-			expect(actionGroup.commands).to.deep.equal([ 'anothercommand', 'multi arg command' ]);
-
+			expect(actionGroup.commands).to.deep.equal([
+				'anothercommand',
+				'multi arg command',
+			]);
 		});
 
 		it('should handle workdir commands', () => {
@@ -121,19 +127,23 @@ describe('Dockerfile inspection', () => {
 
 			let actionGroup = dockerfile.actionGroups[0];
 			expect(actionGroup.workDir).to.equal('/usr/src/app');
-			expect(actionGroup.fileDependencies).to.deep.equal([{
-				localPath: 'a.ts',
-				containerPath: '/usr/src/app/b.ts',
-			}]);
+			expect(actionGroup.fileDependencies).to.deep.equal([
+				{
+					localPath: 'a.ts',
+					containerPath: '/usr/src/app/b.ts',
+				},
+			]);
 			expect(actionGroup.commands).to.have.length(1);
-			expect(actionGroup.commands).to.deep.equal([ 'anothercommand' ]);
+			expect(actionGroup.commands).to.deep.equal(['anothercommand']);
 
 			actionGroup = dockerfile.actionGroups[1];
 			expect(actionGroup.workDir).to.equal('/usr/src/app/src/');
-			expect(actionGroup.fileDependencies).to.deep.equal([{
-				localPath: 'c.ts',
-				containerPath: '/usr/src/app/src/d.ts',
-			}]);
+			expect(actionGroup.fileDependencies).to.deep.equal([
+				{
+					localPath: 'c.ts',
+					containerPath: '/usr/src/app/src/d.ts',
+				},
+			]);
 			expect(actionGroup.commands).to.have.length(2);
 			expect(actionGroup.commands).to.deep.equal([
 				'multi arg command',
@@ -154,7 +164,7 @@ describe('Dockerfile inspection', () => {
 
 			expect(dockerfile.actionGroups).to.have.length(1);
 
-			let actionGroup = dockerfile.actionGroups[0];
+			const actionGroup = dockerfile.actionGroups[0];
 			expect(actionGroup.workDir).to.equal('/usr/src/app');
 			expect(actionGroup.fileDependencies).to.deep.equal([
 				{
@@ -167,10 +177,20 @@ describe('Dockerfile inspection', () => {
 				},
 			]);
 		});
+		it('should handle a COPY before a CMD', () => {
+			const dockerfileContent = [
+				'FROM image',
+				'WORKDIR /usr/src/app',
+				'COPY a.test b.test',
+				'CMD test',
+			].join('\n');
+
+			const dockerfile = new Dockerfile(dockerfileContent);
+			expect(dockerfile.actionGroups).to.have.length(1);
+		});
 	});
 
 	describe('Action group trigger detection', () => {
-
 		// FIXME: Should throw an error when the Dockerfile has changed
 		// as currently that should force a full rebuild
 
@@ -187,15 +207,15 @@ describe('Dockerfile inspection', () => {
 
 			const dockerfile = new Dockerfile(dockerfileContent);
 
-			let groups = dockerfile.getActionGroupsFromChangedFiles([ 'a.ts' ]);
+			let groups = dockerfile.getActionGroupsFromChangedFiles(['a.ts']);
 			expect(groups).to.have.length(2);
 			expect(groups[0].commands).to.have.length(2);
 
-			groups = dockerfile.getActionGroupsFromChangedFiles([ 'c.ts' ]);
+			groups = dockerfile.getActionGroupsFromChangedFiles(['c.ts']);
 			expect(groups).to.have.length(1);
 			expect(groups[0].commands).to.have.length(1);
 
-			groups = dockerfile.getActionGroupsFromChangedFiles([ 'd.ts' ]);
+			groups = dockerfile.getActionGroupsFromChangedFiles(['d.ts']);
 			expect(groups).to.have.length(0);
 		});
 
@@ -212,19 +232,22 @@ describe('Dockerfile inspection', () => {
 
 			const dockerfile = new Dockerfile(dockerfileContent);
 
-			let groups = dockerfile.getActionGroupsFromChangedFiles([ 'src/a.ts' ]);
+			let groups = dockerfile.getActionGroupsFromChangedFiles(['src/a.ts']);
 			expect(groups).to.have.length(2);
 			expect(groups[0].commands).to.have.length(2);
 			expect(groups[1].commands).to.have.length(1);
 
-			groups = dockerfile.getActionGroupsFromChangedFiles([ 'test/a.ts' ]);
+			groups = dockerfile.getActionGroupsFromChangedFiles(['test/a.ts']);
 			expect(groups).to.have.length(1);
 			expect(groups[0].commands).to.have.length(1);
 
-			groups = dockerfile.getActionGroupsFromChangedFiles([ 'src/a.ts', 'test/a.ts' ]);
+			groups = dockerfile.getActionGroupsFromChangedFiles([
+				'src/a.ts',
+				'test/a.ts',
+			]);
 			expect(groups).to.have.length(2);
 
-			groups = dockerfile.getActionGroupsFromChangedFiles([ 'docs/api.md' ]);
+			groups = dockerfile.getActionGroupsFromChangedFiles(['docs/api.md']);
 			expect(groups).to.have.length(0);
 		});
 	});
@@ -233,7 +256,11 @@ describe('Dockerfile inspection', () => {
 		it('should remove dashed arguments', () => {
 			const args = ['--chown', 'root:root', 'a', 'b', 'c'];
 			// Cast to any here, as `removeDashedArgs` is private
-			expect((Dockerfile as any).removeDashedArgs(args)).to.deep.equal(['a', 'b', 'c']);
+			expect((Dockerfile as any).removeDashedArgs(args)).to.deep.equal([
+				'a',
+				'b',
+				'c',
+			]);
 		});
 	});
 });

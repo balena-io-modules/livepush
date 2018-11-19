@@ -59,7 +59,6 @@ export interface DockerfileActionGroup {
 }
 
 class Dockerfile {
-
 	public actionGroups: DockerfileActionGroup[] = [];
 
 	public constructor(dockerfileContents: string) {
@@ -79,7 +78,9 @@ class Dockerfile {
 			switch (entry.name.toUpperCase()) {
 				case 'ADD':
 					// This isn't supported, as adding urls etc can really mess things up.
-					throw new UnsupportedError('Dockerfiles containing the ADD instruction are not supported. Please use COPY.');
+					throw new UnsupportedError(
+						'Dockerfiles containing the ADD instruction are not supported. Please use COPY.',
+					);
 				case 'COPY':
 					// If there are any commands which have occured already, save them as an action
 					// group
@@ -118,8 +119,10 @@ class Dockerfile {
 			}
 		}
 
-		// Store any commands left over
-		if (commands.length > 0) {
+		// Store any commands left over, or add another action
+		// group in case there's been a COPY before the CMD line
+		const last = _.last(this.actionGroups) || { fileDependencies: [] };
+		if (commands.length > 0 || last.fileDependencies !== lastCopy) {
 			this.actionGroups.push({
 				workDir,
 				commands,
@@ -136,17 +139,16 @@ class Dockerfile {
 	 * @param files A list of files whose contents have changed. The path
 	 * should be relative to the build context
 	 */
-	public getActionGroupsFromChangedFiles(files: string[]): DockerfileActionGroup[] {
+	public getActionGroupsFromChangedFiles(
+		files: string[],
+	): DockerfileActionGroup[] {
 		let actionGroupIdx = 0;
 		for (const actionGroup of this.actionGroups) {
 			// FIXME: COPY src/ src/ won't work due to the fact that there isn't a glob on the end of
 			// the target - we can fix this by silenty converting src/ to src/*
 
 			// For every dependency, see if it matches the current action group
-			const matches = _(actionGroup.fileDependencies)
-				.flatMap(({ localPath }) => minimatch.match(files, localPath))
-				.uniq()
-				.value();
+			const matches = Dockerfile.fileMatchesForActionGroup(files, actionGroup);
 
 			// If any of the files have changed we need to return all
 			// action groups which follow, as they could depend on either
@@ -160,6 +162,16 @@ class Dockerfile {
 		}
 
 		return [];
+	}
+
+	public static fileMatchesForActionGroup(
+		files: string[],
+		actionGroup: DockerfileActionGroup,
+	): string[] {
+		return _(actionGroup.fileDependencies)
+			.flatMap(({ localPath }) => minimatch.match(files, localPath))
+			.uniq()
+			.value();
 	}
 
 	private static copyArgsToFileDeps(
