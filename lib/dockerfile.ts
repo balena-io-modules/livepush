@@ -119,8 +119,10 @@ class Dockerfile {
 			}
 		}
 
-		// Store any commands left over
-		if (commands.length > 0) {
+		// Store any commands left over, or add another action
+		// group in case there's been a COPY before the CMD line
+		const last = _.last(this.actionGroups) || { fileDependencies: [] };
+		if (commands.length > 0 || last.fileDependencies !== lastCopy) {
 			this.actionGroups.push({
 				workDir,
 				commands,

@@ -177,6 +177,17 @@ describe('Dockerfile inspection', () => {
 				},
 			]);
 		});
+		it('should handle a COPY before a CMD', () => {
+			const dockerfileContent = [
+				'FROM image',
+				'WORKDIR /usr/src/app',
+				'COPY a.test b.test',
+				'CMD test',
+			].join('\n');
+
+			const dockerfile = new Dockerfile(dockerfileContent);
+			expect(dockerfile.actionGroups).to.have.length(1);
+		});
 	});
 
 	describe('Action group trigger detection', () => {
