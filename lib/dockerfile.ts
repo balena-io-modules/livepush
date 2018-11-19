@@ -148,7 +148,7 @@ class Dockerfile {
 			// the target - we can fix this by silenty converting src/ to src/*
 
 			// For every dependency, see if it matches the current action group
-			const matches = this.fileMatchesForActionGroup(files, actionGroup);
+			const matches = Dockerfile.fileMatchesForActionGroup(files, actionGroup);
 
 			// If any of the files have changed we need to return all
 			// action groups which follow, as they could depend on either
@@ -164,7 +164,7 @@ class Dockerfile {
 		return [];
 	}
 
-	public fileMatchesForActionGroup(
+	public static fileMatchesForActionGroup(
 		files: string[],
 		actionGroup: DockerfileActionGroup,
 	): string[] {
