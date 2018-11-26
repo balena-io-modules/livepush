@@ -14,7 +14,7 @@
 		"prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"{lib,test}/**/*.ts\"",
 		"lint": "resin-lint --typescript lib/ test/ && tsc --noEmit",
 		"build": "npm run clean && npm run prettify && tsc --project tsconfig.publish.json",
-		"build:test": "npm run clean && tsc --project .",
+		"build:test": "npm run clean && tsc --project . && cp -r test/contexts build/test/",
 		"test": "npm run prettify && npm run lint && npm run test:cov",
 		"test:cov": "npm run build:test && nyc mocha",
 		"test:fast": "npm run build:test && mocha"

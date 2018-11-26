@@ -1,4 +1,6 @@
+import Container from './container';
 import Dockerfile from './dockerfile';
 import { DockerfileParseError, UnsupportedError } from './errors';
 
-export { Dockerfile, DockerfileParseError, UnsupportedError };
+export { Container, Dockerfile, DockerfileParseError, UnsupportedError };
+export default Container;
