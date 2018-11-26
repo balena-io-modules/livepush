@@ -5,6 +5,7 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"strictNullChecks": true,
+		"removeComments": true,
 	},
 	"exclude": [
 		"test"
