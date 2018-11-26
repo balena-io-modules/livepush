@@ -1,0 +1,48 @@
+version: 2
+
+buildSteps: &buildSteps
+  - setup_remote_docker
+  - checkout
+  - run:
+      name: install-npm
+      command: npm ci
+  - run:
+      name: test
+      command: npm test
+
+oldBuildSteps: &oldBuildSteps
+  - setup_remote_docker
+  - checkout
+  - run:
+      name: install-npm
+      command: npm install
+  - run:
+      name: test
+      command: npm test
+
+jobs:
+  "node-6":
+    docker:
+      - image: circleci/node:6
+    working_directory: ~/node-6
+    steps: *oldBuildSteps
+
+  "node-8":
+    docker:
+      - image: circleci/node:8
+    working_directory: ~/node-8
+    steps: *buildSteps
+
+  "node-10":
+    docker:
+      - image: circleci/node:10
+    working_directory: ~/node-10
+    steps: *buildSteps
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - "node-6"
+      - "node-8"
+      - "node-10"
