@@ -6,7 +6,6 @@
 		"preserveConstEnums": true,
 		"declaration": true,
 		"pretty": true,
-		"removeComments": true,
 		"sourceMap": true
 	}
 }
