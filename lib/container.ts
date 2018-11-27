@@ -129,15 +129,11 @@ export class Container {
 						this.hostContextPath,
 						operation.fromPath,
 					);
-					const stats = await fs.stat(pathOnDisk);
-					const content = await fs.readFile(pathOnDisk);
 
-					pack.entry(
-						{
-							name: path.relative(destination, operation.toPath),
-							size: stats.size,
-						},
-						content,
+					await this.addFileToTarPack(
+						pack,
+						pathOnDisk,
+						path.relative(destination, operation.toPath),
 					);
 				}
 
@@ -156,6 +152,30 @@ export class Container {
 			// generate the delete command
 			const command = ['/bin/rm', '-f', f];
 			await this.executeCommand(command);
+		});
+	}
+
+	private async addFileToTarPack(
+		pack: tar.Pack,
+		path: string,
+		destination: string,
+	): Promise<void> {
+		const stat = await fs.stat(path);
+		await new Promise((resolve, reject) => {
+			const entry = pack.entry(
+				{ name: destination, size: stat.size },
+				(err?: Error) => {
+					if (err) {
+						reject(err);
+					} else {
+						resolve();
+					}
+				},
+			);
+
+			const readStream = fs.createReadStream(path);
+			readStream.on('error', reject);
+			readStream.pipe(entry);
 		});
 	}
 
