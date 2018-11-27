@@ -19,10 +19,28 @@ import { streamToBuffer } from './util';
  * should be provided as:
  * 	src/main.ts
  */
-export interface FileUpdates {
+interface ChangedFiles {
 	updated: string[];
 	added: string[];
 	deleted: string[];
+}
+
+export class FileUpdates {
+	public constructor(public readonly files: ChangedFiles) {}
+
+	public affected(): string[] {
+		return this.files.updated
+			.concat(this.files.added)
+			.concat(this.files.deleted);
+	}
+
+	public addedAndUpdated(): string[] {
+		return this.files.updated.concat(this.files.added);
+	}
+
+	public deleted(): string[] {
+		return this.files.deleted;
+	}
 }
 
 interface AddOperation {
@@ -52,9 +70,7 @@ export class Container {
 	public actionsNeeded(files: FileUpdates): DockerfileActionGroup[] {
 		// The Dockerfile class itself doesn't care whether a file has been added, changed or deleted,
 		// it simply returns the commands which need to happen based on the paths in the COPY directives.
-		return this.dockerfile.getActionGroupsFromChangedFiles(
-			files.updated.concat(files.added).concat(files.deleted),
-		);
+		return this.dockerfile.getActionGroupsFromChangedFiles(files.affected());
 	}
 
 	public async performActions(
@@ -69,7 +85,7 @@ export class Container {
 
 		for (const actionGroup of actionGroups) {
 			// get the affected files for this action group
-			const updated = files.added.concat(files.updated);
+			const updated = files.addedAndUpdated();
 
 			const toAdd = this.getAddOperations(
 				Dockerfile.fileMatchesForActionGroup(updated, actionGroup),
@@ -77,7 +93,7 @@ export class Container {
 			);
 
 			const toDelete = this.getDeleteOperations(
-				Dockerfile.fileMatchesForActionGroup(files.deleted, actionGroup),
+				Dockerfile.fileMatchesForActionGroup(files.deleted(), actionGroup),
 				actionGroup,
 			);
 

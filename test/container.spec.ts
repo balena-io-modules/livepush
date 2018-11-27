@@ -9,7 +9,7 @@ import { fs } from 'mz';
 import * as path from 'path';
 import * as tar from 'tar-stream';
 
-import Container from '../lib/container';
+import Container, { FileUpdates } from '../lib/container';
 import { streamToBuffer } from '../lib/util';
 
 import docker from './docker';
@@ -129,11 +129,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: [],
 					deleted: [],
 					added: ['a.test'],
-				};
+				});
 
 				const tasks = container.actionsNeeded(changedFiles);
 
@@ -179,11 +179,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: ['a.test', 'b.test'],
 					deleted: [],
 					added: [],
-				};
+				});
 
 				const tasks = container.actionsNeeded(changedFiles);
 				expect(tasks).to.have.length(1);
@@ -220,11 +220,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: ['a.test'],
 					deleted: [],
 					added: [],
-				};
+				});
 
 				const actions = container.actionsNeeded(changedFiles);
 				expect(actions).to.have.length(1);
@@ -262,11 +262,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: ['a.test'],
 					deleted: [],
 					added: [],
-				};
+				});
 
 				const actions = container.actionsNeeded(changedFiles);
 				expect(actions).to.have.length(1);
@@ -300,11 +300,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: ['a.test'],
 					deleted: [],
 					added: [],
-				};
+				});
 
 				const actions = container.actionsNeeded(changedFiles);
 				expect(actions).to.have.length(1);
@@ -337,11 +337,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: ['a.test'],
 					deleted: [],
 					added: [],
-				};
+				});
 
 				const actions = container.actionsNeeded(changedFiles);
 				expect(actions).to.have.length(1);
@@ -394,11 +394,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: [],
 					deleted: ['a.test'],
 					added: [],
-				};
+				});
 
 				const tasks = container.actionsNeeded(changedFiles);
 				expect(tasks).to.have.length(1);
@@ -445,11 +445,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: [],
 					deleted: ['a.test'],
 					added: [],
-				};
+				});
 
 				const tasks = container.actionsNeeded(changedFiles);
 				expect(tasks).to.have.length(1);
@@ -476,11 +476,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: [],
 					deleted: ['a.test'],
 					added: [],
-				};
+				});
 
 				const tasks = container.actionsNeeded(changedFiles);
 				expect(tasks).to.have.length(1);
@@ -512,11 +512,11 @@ describe('Container utilities', () => {
 					docker,
 				);
 
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: [],
 					deleted: ['a.test', 'b.test'],
 					added: [],
-				};
+				});
 
 				const tasks = container.actionsNeeded(changedFiles);
 				expect(tasks).to.have.length(1);
@@ -574,11 +574,11 @@ describe('Container utilities', () => {
 					currentContainer.id,
 					docker,
 				);
-				const changedFiles = {
+				const changedFiles = new FileUpdates({
 					updated: [],
 					deleted: [],
 					added: ['a.test'],
-				};
+				});
 
 				const tasks = container.actionsNeeded(changedFiles);
 
