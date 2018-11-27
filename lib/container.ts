@@ -59,10 +59,10 @@ export class Container {
 	private dockerfile: Dockerfile;
 
 	public constructor(
-		public dockerfileContent: string,
-		public hostContextPath: string,
+		public readonly dockerfileContent: string,
+		public readonly hostContextPath: string,
 		public containerId: string,
-		public docker: Dockerode,
+		public readonly docker: Dockerode,
 	) {
 		this.dockerfile = new Dockerfile(dockerfileContent);
 	}
