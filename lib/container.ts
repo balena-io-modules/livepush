@@ -19,7 +19,7 @@ import { streamToBuffer } from './util';
  * should be provided as:
  * 	src/main.ts
  */
-interface ChangedFiles {
+export interface ChangedFiles {
 	updated: string[];
 	added: string[];
 	deleted: string[];
