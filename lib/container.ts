@@ -220,9 +220,17 @@ export class Container {
 					'Could not find matching file for action group',
 				);
 			}
+
+			// TODO: I'm not sure the logic here is actually correct,
+			// specifically the way we build the destination when the containerPath
+			// is a directory
+			const toPath = matchingDep.destinationIsDirectory
+				? path.join(matchingDep.containerPath, f.split(path.sep).pop()!)
+				: matchingDep.containerPath;
+
 			return {
 				fromPath: f,
-				toPath: matchingDep.containerPath,
+				toPath,
 			};
 		});
 	}

@@ -30,6 +30,10 @@ export interface FileDependency {
 	 * Where this file gets mapped to inside the container
 	 */
 	containerPath: string;
+	/**
+	 * Does the container path point to a directory or a file?
+	 */
+	destinationIsDirectory: boolean;
 }
 
 export type Command = string;
@@ -224,20 +228,30 @@ class Dockerfile {
 
 		// If the destination is already absolute, the workdir doesn't come into it,
 		// but a relative destination means relative to the working directory
+		let isDir = false;
 		if (!path.isAbsolute(dest)) {
 			dest = path.join(workDir, dest);
+
+			// This will happen for same directory copies
+			if (dest === workDir) {
+				isDir = true;
+			}
+		} else {
+			isDir = true;
 		}
 
-		const isDir = dest.endsWith('/');
-
 		return copyArgs.map(arg => {
-			const containerPath = isDir ? path.join(dest, arg) : dest;
-
 			return {
-				localPath: arg,
-				containerPath,
+				localPath: path.normalize(arg),
+				containerPath: dest,
+				destinationIsDirectory: isDir || Dockerfile.isDirectory(dest),
 			};
 		});
+	}
+
+	private static isDirectory(p: string) {
+		const normalized = path.normalize(p);
+		return normalized === '.' || normalized === '..' || _.endsWith(p, path.sep);
 	}
 
 	private static processRunArgs(

@@ -321,6 +321,50 @@ describe('Container utilities', () => {
 					.that.equals(fileA);
 			});
 
+			it('should add globbed files to a container', async () => {
+				const dockerfileContent = [
+					`FROM ${image}`,
+					'COPY ./* /tmp/',
+					'CMD test',
+				].join('\n');
+
+				const context = path.join(__dirname, 'contexts', 'a');
+				const fileA = await readFile(path.join(context, 'a.test'), 'utf8');
+				const fileB = await readFile(path.join(context, 'b.test'), 'utf8');
+
+				const container = new Container(
+					dockerfileContent,
+					context,
+					currentContainer.id,
+					docker,
+				);
+
+				const changedFiles = new FileUpdates({
+					updated: ['a.test', 'b.test'],
+					deleted: [],
+					added: [],
+				});
+
+				const actions = container.actionsNeeded(changedFiles);
+				expect(actions).to.have.length(1);
+
+				await container.performActions(changedFiles, actions);
+
+				const files = await getDirectoryFromContainer(
+					container.containerId,
+					'/tmp',
+				);
+
+				expect(files)
+					.to.have.property('tmp/a.test')
+					.that.has.property('data')
+					.that.equals(fileA);
+				expect(files)
+					.to.have.property('tmp/b.test')
+					.that.has.property('data')
+					.that.equals(fileB);
+			});
+
 			it('should throw an error when the container is not running', done => {
 				const dockerfileContent = [
 					`FROM ${image}`,
