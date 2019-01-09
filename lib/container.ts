@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import * as _ from 'lodash';
 import { fs } from 'mz';
 import * as path from 'path';
+import { parse } from 'shell-quote';
 import * as Stream from 'stream';
 import StrictEventEmitter from 'strict-event-emitter-types';
 import * as tar from 'tar-stream';
@@ -117,6 +118,13 @@ export class Container extends (EventEmitter as {
 
 			await this.addFiles(toAdd);
 			await this.deleteFiles(toDelete);
+
+			// Now we need to execute the commands
+			await Promise.all(
+				actionGroup.commands.map(command =>
+					this.executeCommand(parse(command)),
+				),
+			);
 		}
 
 		// If we made any changes, restart the container
