@@ -91,9 +91,15 @@ class Dockerfile {
 							fileDependencies: lastCopy,
 						});
 						commands = [];
+						lastCopy = Dockerfile.copyArgsToFileDeps(workDir, entry.args);
+					} else {
+						// If we have multiple copy commands in a row, gather them so that we can
+						// act on all of them
+						lastCopy = lastCopy.concat(
+							Dockerfile.copyArgsToFileDeps(workDir, entry.args),
+						);
 					}
 
-					lastCopy = Dockerfile.copyArgsToFileDeps(workDir, entry.args);
 					break;
 				case 'WORKDIR':
 					// Take every command we currently have, and save it as an action group,
@@ -105,6 +111,7 @@ class Dockerfile {
 							commands,
 							fileDependencies: lastCopy,
 						});
+						lastCopy = [];
 					}
 					commands = [];
 					if (!_.isString(entry.args)) {
