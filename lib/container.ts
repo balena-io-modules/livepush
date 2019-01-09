@@ -139,7 +139,9 @@ export class Container extends (EventEmitter as {
 	}
 
 	private async restartContainer(): Promise<void> {
-		await this.docker.getContainer(this.containerId).restart();
+		const container = this.docker.getContainer(this.containerId);
+		await container.kill();
+		await container.start();
 	}
 
 	private async addFiles(files: AddOperation[]): Promise<void> {

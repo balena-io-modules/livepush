@@ -589,11 +589,18 @@ describe('Container utilities', () => {
 					},
 				});
 
+				let killed = false;
 				eventStream.on('data', data => {
 					try {
 						const obj = JSON.parse(data.toString());
-						if (obj.status === 'restart') {
-							resolve();
+						if (obj.status === 'kill') {
+							killed = true;
+						} else if (obj.status === 'start') {
+							if (killed) {
+								resolve();
+							} else {
+								reject(new Error('Container start request without a kill'));
+							}
 							// Force killing of the read stream, otherwise
 							// the process never finishes (cast to any as
 							// this is undocumented)
