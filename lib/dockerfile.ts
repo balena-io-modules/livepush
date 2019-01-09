@@ -174,6 +174,27 @@ class Dockerfile {
 			.value();
 	}
 
+	/**
+	 * Get the specific file dependency in an action group which will then
+	 * be used to calculate where to add the file in the container
+	 *
+	 * Returns the FileDependency or null if not found
+	 *
+	 * @param file The file to check
+	 * @param actionGroup The action group which references the file
+	 */
+	public static getActionGroupFileDependency(
+		file: string,
+		actionGroup: DockerfileActionGroup,
+	): FileDependency | null {
+		for (const dep of actionGroup.fileDependencies) {
+			if (minimatch(file, dep.localPath)) {
+				return dep;
+			}
+		}
+		return null;
+	}
+
 	private static copyArgsToFileDeps(
 		workDir: string,
 		copyArgs: string | string[] | { [key: string]: string },

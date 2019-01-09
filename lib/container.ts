@@ -209,9 +209,9 @@ export class Container {
 		actionGroup: DockerfileActionGroup,
 	): Array<{ fromPath: string; toPath: string }> {
 		return files.map(f => {
-			const matchingDep = _.find(
-				actionGroup.fileDependencies,
-				dep => dep.localPath === f,
+			const matchingDep = Dockerfile.getActionGroupFileDependency(
+				f,
+				actionGroup,
 			);
 
 			/* istanbul ignore next */
