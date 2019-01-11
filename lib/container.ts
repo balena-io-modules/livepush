@@ -1,14 +1,16 @@
 import * as Bluebird from 'bluebird';
 import * as Dockerode from 'dockerode';
+import { EventEmitter } from 'events';
 import * as _ from 'lodash';
 import { fs } from 'mz';
 import * as path from 'path';
+import { parse } from 'shell-quote';
 import * as Stream from 'stream';
+import StrictEventEmitter from 'strict-event-emitter-types';
 import * as tar from 'tar-stream';
 
 import Dockerfile, { DockerfileActionGroup } from './dockerfile';
 import { ContainerNotRunningError, InternalInconsistencyError } from './errors';
-import { streamToBuffer } from './util';
 
 /**
  * This structure represents files which have changed that are
@@ -55,7 +57,23 @@ export interface ExecResult {
 	stderrOutput: Buffer;
 }
 
-export class Container {
+interface CommandOutput {
+	command: string[];
+	output: Buffer;
+	isStderr: boolean;
+}
+
+interface ContainerEvents {
+	commandOutput: CommandOutput;
+	commandReturn: (returnCode: number) => void;
+	containerRestart: void;
+}
+
+type ContainerEventEmitter = StrictEventEmitter<EventEmitter, ContainerEvents>;
+
+export class Container extends (EventEmitter as {
+	new (): ContainerEventEmitter;
+}) {
 	private dockerfile: Dockerfile;
 
 	public constructor(
@@ -64,6 +82,7 @@ export class Container {
 		public containerId: string,
 		public readonly docker: Dockerode,
 	) {
+		super();
 		this.dockerfile = new Dockerfile(dockerfileContent);
 	}
 
@@ -99,6 +118,11 @@ export class Container {
 
 			await this.addFiles(toAdd);
 			await this.deleteFiles(toDelete);
+
+			// Now we need to execute the commands
+			for (const command of actionGroup.commands) {
+				await this.executeCommand(parse(command));
+			}
 		}
 
 		// If we made any changes, restart the container
@@ -113,7 +137,9 @@ export class Container {
 	}
 
 	private async restartContainer(): Promise<void> {
-		await this.docker.getContainer(this.containerId).restart();
+		const container = this.docker.getContainer(this.containerId);
+		await container.kill();
+		await container.start();
 	}
 
 	private async addFiles(files: AddOperation[]): Promise<void> {
@@ -209,9 +235,9 @@ export class Container {
 		actionGroup: DockerfileActionGroup,
 	): Array<{ fromPath: string; toPath: string }> {
 		return files.map(f => {
-			const matchingDep = _.find(
-				actionGroup.fileDependencies,
-				dep => dep.localPath === f,
+			const matchingDep = Dockerfile.getActionGroupFileDependency(
+				f,
+				actionGroup,
 			);
 
 			/* istanbul ignore next */
@@ -220,14 +246,22 @@ export class Container {
 					'Could not find matching file for action group',
 				);
 			}
+
+			// TODO: I'm not sure the logic here is actually correct,
+			// specifically the way we build the destination when the containerPath
+			// is a directory
+			const toPath = matchingDep.destinationIsDirectory
+				? path.join(matchingDep.containerPath, f.split(path.sep).pop()!)
+				: matchingDep.containerPath;
+
 			return {
 				fromPath: f,
-				toPath: matchingDep.containerPath,
+				toPath,
 			};
 		});
 	}
 
-	private async executeCommand(command: string[]): Promise<ExecResult> {
+	private async executeCommand(command: string[]): Promise<number> {
 		// first create an exec instance
 		const exec = await this.docker.getContainer(this.containerId).exec({
 			Cmd: command,
@@ -238,7 +272,7 @@ export class Container {
 		// The exec.start function's promise interface doesn't seem to work,
 		// so wrap it in an explicit Promise, and return when the command
 		// finishes
-		return new Promise<ExecResult>((resolve, reject) => {
+		return new Promise<number>((resolve, reject) => {
 			exec.start(async (err: Error, stream: Stream.Readable) => {
 				/* istanbul ignore next */
 				if (err) {
@@ -248,25 +282,20 @@ export class Container {
 				const stdout = new Stream.PassThrough();
 				const stderr = new Stream.PassThrough();
 
-				stream.on('end', () => {
+				stream.on('end', async () => {
 					stdout.end();
 					stderr.end();
+					const inspect = await exec.inspect();
+					resolve(inspect.ExitCode);
 				});
 				this.docker.modem.demuxStream(stream, stdout, stderr);
-
-				const [stderrOutput, stdoutOutput] = await Bluebird.map(
-					[stderr, stdout],
-					streamToBuffer,
-				);
-
 				// Now that the streams have ended we should be able to
 				// inspect the exec to find the return code
-				const inspect = await exec.inspect();
-
-				resolve({
-					returnCode: inspect.ExitCode,
-					stderrOutput,
-					stdoutOutput,
+				stderr.on('data', d => {
+					this.emit('commandOutput', { command, output: d, isStderr: true });
+				});
+				stdout.on('data', d => {
+					this.emit('commandOutput', { command, output: d, isStderr: false });
 				});
 			});
 		});

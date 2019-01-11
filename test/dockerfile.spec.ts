@@ -70,6 +70,7 @@ describe('Dockerfile inspection', () => {
 			expect(actionGroup.fileDependencies).to.have.length(1);
 			expect(actionGroup.fileDependencies[0]).to.deep.equal({
 				localPath: 'a.ts',
+				destinationIsDirectory: false,
 				containerPath: '/b.ts',
 			});
 			expect(actionGroup.commands).to.deep.equal([
@@ -101,6 +102,7 @@ describe('Dockerfile inspection', () => {
 			expect(actionGroup.fileDependencies).to.have.length(1);
 			expect(actionGroup.fileDependencies[0]).to.deep.equal({
 				localPath: 'a.ts',
+				destinationIsDirectory: false,
 				containerPath: '/b.ts',
 			});
 			expect(actionGroup.commands).to.deep.equal([
@@ -130,6 +132,7 @@ describe('Dockerfile inspection', () => {
 			expect(actionGroup.fileDependencies).to.deep.equal([
 				{
 					localPath: 'a.ts',
+					destinationIsDirectory: false,
 					containerPath: '/usr/src/app/b.ts',
 				},
 			]);
@@ -141,6 +144,7 @@ describe('Dockerfile inspection', () => {
 			expect(actionGroup.fileDependencies).to.deep.equal([
 				{
 					localPath: 'c.ts',
+					destinationIsDirectory: false,
 					containerPath: '/usr/src/app/src/d.ts',
 				},
 			]);
@@ -169,14 +173,17 @@ describe('Dockerfile inspection', () => {
 			expect(actionGroup.fileDependencies).to.deep.equal([
 				{
 					localPath: 'c.ts',
-					containerPath: '/usr/src/app/c.ts',
+					destinationIsDirectory: true,
+					containerPath: '/usr/src/app/',
 				},
 				{
 					localPath: 'd.ts',
-					containerPath: '/usr/src/app/d.ts',
+					destinationIsDirectory: true,
+					containerPath: '/usr/src/app/',
 				},
 			]);
 		});
+
 		it('should handle a COPY before a CMD', () => {
 			const dockerfileContent = [
 				'FROM image',
@@ -187,6 +194,60 @@ describe('Dockerfile inspection', () => {
 
 			const dockerfile = new Dockerfile(dockerfileContent);
 			expect(dockerfile.actionGroups).to.have.length(1);
+		});
+
+		it('should correctly detect multiple file dependencies', () => {
+			const dockerfileContent = [
+				'FROM image',
+				'WORKDIR /usr/src/app',
+				'COPY a.test b.test',
+				'COPY c.test d.test',
+				'RUN command',
+				'RUN command2',
+				'CMD test',
+			].join('\n');
+
+			const dockerfile = new Dockerfile(dockerfileContent);
+			expect(dockerfile.actionGroups).to.have.length(1);
+
+			const ag = dockerfile.actionGroups[0];
+			expect(ag).to.deep.equal({
+				workDir: '/usr/src/app',
+				fileDependencies: [
+					{
+						localPath: 'a.test',
+						destinationIsDirectory: false,
+						containerPath: '/usr/src/app/b.test',
+					},
+					{
+						localPath: 'c.test',
+						destinationIsDirectory: false,
+						containerPath: '/usr/src/app/d.test',
+					},
+				],
+				commands: ['command', 'command2'],
+			});
+		});
+
+		it('should correctly generate copies to the current directory', () => {
+			const dockerfileContent = [
+				'FROM test',
+				'WORKDIR /usr/src/app',
+				'COPY a.test .',
+				'CMD cmd',
+			].join('\n');
+
+			const dockerfile = new Dockerfile(dockerfileContent);
+			expect(dockerfile.actionGroups).to.have.length(1);
+
+			const ag = dockerfile.actionGroups[0];
+			expect(ag.fileDependencies).to.deep.equal([
+				{
+					localPath: 'a.test',
+					destinationIsDirectory: true,
+					containerPath: '/usr/src/app',
+				},
+			]);
 		});
 	});
 

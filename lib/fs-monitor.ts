@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import { FSWatcher } from 'fs';
 import { fs } from 'mz';
+import { relative } from 'path';
+
 import watch = require('node-watch');
 
 export interface FSEvent {
@@ -28,7 +30,8 @@ export class FSMonitor extends EventEmitter {
 			this.directory,
 			{ recursive: true },
 			(eventType, filename) => {
-				this.emit('fs-event', { filename, eventType });
+				const relFile = relative(this.directory, filename);
+				this.emit('fs-event', { filename: relFile, eventType });
 			},
 		);
 	}

@@ -30,6 +30,10 @@ export interface FileDependency {
 	 * Where this file gets mapped to inside the container
 	 */
 	containerPath: string;
+	/**
+	 * Does the container path point to a directory or a file?
+	 */
+	destinationIsDirectory: boolean;
 }
 
 export type Command = string;
@@ -91,9 +95,15 @@ class Dockerfile {
 							fileDependencies: lastCopy,
 						});
 						commands = [];
+						lastCopy = Dockerfile.copyArgsToFileDeps(workDir, entry.args);
+					} else {
+						// If we have multiple copy commands in a row, gather them so that we can
+						// act on all of them
+						lastCopy = lastCopy.concat(
+							Dockerfile.copyArgsToFileDeps(workDir, entry.args),
+						);
 					}
 
-					lastCopy = Dockerfile.copyArgsToFileDeps(workDir, entry.args);
 					break;
 				case 'WORKDIR':
 					// Take every command we currently have, and save it as an action group,
@@ -105,6 +115,7 @@ class Dockerfile {
 							commands,
 							fileDependencies: lastCopy,
 						});
+						lastCopy = [];
 					}
 					commands = [];
 					if (!_.isString(entry.args)) {
@@ -174,6 +185,27 @@ class Dockerfile {
 			.value();
 	}
 
+	/**
+	 * Get the specific file dependency in an action group which will then
+	 * be used to calculate where to add the file in the container
+	 *
+	 * Returns the FileDependency or null if not found
+	 *
+	 * @param file The file to check
+	 * @param actionGroup The action group which references the file
+	 */
+	public static getActionGroupFileDependency(
+		file: string,
+		actionGroup: DockerfileActionGroup,
+	): FileDependency | null {
+		for (const dep of actionGroup.fileDependencies) {
+			if (minimatch(file, dep.localPath)) {
+				return dep;
+			}
+		}
+		return null;
+	}
+
 	private static copyArgsToFileDeps(
 		workDir: string,
 		copyArgs: string | string[] | { [key: string]: string },
@@ -196,20 +228,30 @@ class Dockerfile {
 
 		// If the destination is already absolute, the workdir doesn't come into it,
 		// but a relative destination means relative to the working directory
+		let isDir = false;
 		if (!path.isAbsolute(dest)) {
 			dest = path.join(workDir, dest);
+
+			// This will happen for same directory copies
+			if (dest === workDir) {
+				isDir = true;
+			}
+		} else {
+			isDir = true;
 		}
 
-		const isDir = dest.endsWith('/');
-
 		return copyArgs.map(arg => {
-			const containerPath = isDir ? path.join(dest, arg) : dest;
-
 			return {
-				localPath: arg,
-				containerPath,
+				localPath: path.normalize(arg),
+				containerPath: dest,
+				destinationIsDirectory: isDir || Dockerfile.isDirectory(dest),
 			};
 		});
+	}
+
+	private static isDirectory(p: string) {
+		const normalized = path.normalize(p);
+		return normalized === '.' || normalized === '..' || _.endsWith(p, path.sep);
 	}
 
 	private static processRunArgs(
