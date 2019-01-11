@@ -120,11 +120,9 @@ export class Container extends (EventEmitter as {
 			await this.deleteFiles(toDelete);
 
 			// Now we need to execute the commands
-			await Promise.all(
-				actionGroup.commands.map(command =>
-					this.executeCommand(parse(command)),
-				),
-			);
+			for (const command of actionGroup.commands) {
+				await this.executeCommand(parse(command));
+			}
 		}
 
 		// If we made any changes, restart the container
