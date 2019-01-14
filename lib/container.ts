@@ -64,6 +64,7 @@ interface CommandOutput {
 }
 
 interface ContainerEvents {
+	commandExecute: string;
 	commandOutput: CommandOutput;
 	commandReturn: (returnCode: number) => void;
 	containerRestart: void;
@@ -177,6 +178,7 @@ export class Container extends (EventEmitter as {
 		await Bluebird.map(files, async f => {
 			// generate the delete command
 			const command = ['/bin/rm', '-f', f];
+			this.emit('commandExecute', command.join(' '));
 			await this.executeCommand(command);
 		});
 	}
@@ -262,6 +264,7 @@ export class Container extends (EventEmitter as {
 	}
 
 	private async executeCommand(command: string[]): Promise<number> {
+		this.emit('commandExecute', command.join(' '));
 		// first create an exec instance
 		const exec = await this.docker.getContainer(this.containerId).exec({
 			Cmd: command,
