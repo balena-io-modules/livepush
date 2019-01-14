@@ -3,6 +3,7 @@
   "version": "0.8.0",
   "description": "Update your containers live!",
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "directories": {
     "lib": "lib"
   },
