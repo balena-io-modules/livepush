@@ -17,7 +17,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 
 chai.use(chaiAsPromised);
 
-const { expect } = chai;
+const { assert, expect } = chai;
 
 import Dockerfile from '../lib/dockerfile';
 
@@ -311,6 +311,36 @@ describe('Dockerfile inspection', () => {
 			groups = dockerfile.getActionGroupsFromChangedFiles(['docs/api.md']);
 			expect(groups).to.have.length(0);
 		});
+
+		it('should detect action groups to trigger from directory copies', () => {
+			let dockerfileContent = [
+				'FROM baseimage',
+				'COPY src ./',
+				'RUN command1',
+				'COPY ./ src/',
+				'RUN command2',
+			].join('\n');
+
+			let dockerfile = new Dockerfile(dockerfileContent);
+			let groups = dockerfile.getActionGroupsFromChangedFiles(['src/test.ts']);
+			expect(groups).to.have.length(2);
+
+			groups = dockerfile.getActionGroupsFromChangedFiles(['test.ts']);
+			expect(groups).to.have.length(1);
+
+			dockerfileContent = [
+				'FROM baseimage',
+				'COPY . ./',
+				'RUN command1',
+				'RUN command2',
+			].join('\n');
+
+			dockerfile = new Dockerfile(dockerfileContent);
+
+			groups = dockerfile.getActionGroupsFromChangedFiles(['test.ts']);
+			expect(groups).to.have.length(1);
+			expect(groups[0].commands).to.have.length(2);
+		});
 	});
 
 	describe('Utilities', () => {
@@ -322,6 +352,23 @@ describe('Dockerfile inspection', () => {
 				'b',
 				'c',
 			]);
+		});
+
+		it('should detect child paths', () => {
+			const isChild = (Dockerfile as any).isChildPath;
+
+			assert(isChild('/usr/src/app', '/usr/src/app/src'), 'assert 1');
+			assert(isChild('/usr/src/app/', '/usr/src/app/src/'), 'assert 2');
+			assert(isChild('/', '/a/'), 'assert 3');
+			assert(isChild('/', '/a/'), 'assert 4');
+			assert(isChild('/usr/src/', '/usr/src/app/src'), 'assert 5');
+			assert(isChild('/usr', '/usr/src/app/src'), 'assert 6');
+			assert(!isChild('/usr/src/a/test', '/usr/src/app/test'), 'assert 7');
+			assert(!isChild('/usr/src/a', '/usr/src/app/test'), 'assert 8');
+			assert(isChild('.', 'index.ts'), 'assert 9');
+			assert(isChild('.', 'src/index.ts'), 'assert 10');
+			assert(isChild('src', 'src/index.ts', 'assert 11'));
+			assert(!isChild('src', 'test/index.ts', 'assert 12'));
 		});
 	});
 });

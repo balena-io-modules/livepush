@@ -180,7 +180,11 @@ class Dockerfile {
 		actionGroup: DockerfileActionGroup,
 	): string[] {
 		return _(actionGroup.fileDependencies)
-			.flatMap(({ localPath }) => minimatch.match(files, localPath))
+			.flatMap(({ localPath }) =>
+				files.filter(
+					f => minimatch(f, localPath) || Dockerfile.isChildPath(localPath, f),
+				),
+			)
 			.uniq()
 			.value();
 	}
@@ -252,6 +256,14 @@ class Dockerfile {
 	private static isDirectory(p: string) {
 		const normalized = path.normalize(p);
 		return normalized === '.' || normalized === '..' || _.endsWith(p, path.sep);
+	}
+
+	private static isChildPath(parent: string, child: string): boolean {
+		// from: https://stackoverflow.com/a/45242825/4193583
+		const relative = path.relative(parent, child);
+		return (
+			!!relative && !relative.startsWith('..') && !path.isAbsolute(relative)
+		);
 	}
 
 	private static processRunArgs(
