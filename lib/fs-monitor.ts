@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { FSWatcher } from 'fs';
 import { fs } from 'mz';
 import { relative } from 'path';
+import StrictEventEmitter from 'strict-event-emitter-types';
 
 import watch = require('node-watch');
 
@@ -10,7 +11,15 @@ export interface FSEvent {
 	eventType: string;
 }
 
-export class FSMonitor extends EventEmitter {
+interface MonitorEvents {
+	'fs-event': FSEvent;
+}
+
+type FSEventEmitter = StrictEventEmitter<EventEmitter, MonitorEvents>;
+
+export class FSMonitor extends (EventEmitter as {
+	new (): FSEventEmitter;
+}) {
 	private watcher: FSWatcher | null = null;
 
 	public constructor(private directory: string) {
