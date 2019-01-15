@@ -4,7 +4,8 @@ import { EventEmitter } from 'events';
 import * as _ from 'lodash';
 import { fs } from 'mz';
 import * as path from 'path';
-import { parse } from 'shell-quote';
+import * as escape from 'shell-escape';
+import * as shell from 'shell-quote';
 import * as Stream from 'stream';
 import StrictEventEmitter from 'strict-event-emitter-types';
 import * as tar from 'tar-stream';
@@ -122,7 +123,8 @@ export class Container extends (EventEmitter as {
 
 			// Now we need to execute the commands
 			for (const command of actionGroup.commands) {
-				await this.executeCommand(parse(command));
+				const dockerCommand = Container.generateContainerCommand(command);
+				await this.executeCommand(dockerCommand);
 			}
 		}
 
@@ -302,6 +304,10 @@ export class Container extends (EventEmitter as {
 				});
 			});
 		});
+	}
+
+	private static generateContainerCommand(command: string): string[] {
+		return shell.parse(escape(['/bin/sh', '-c', `${command}`]));
 	}
 }
 
