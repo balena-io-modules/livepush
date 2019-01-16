@@ -203,7 +203,10 @@ class Dockerfile {
 		actionGroup: DockerfileActionGroup,
 	): FileDependency | null {
 		for (const dep of actionGroup.fileDependencies) {
-			if (minimatch(file, dep.localPath)) {
+			if (
+				minimatch(file, dep.localPath) ||
+				Dockerfile.isChildPath(dep.localPath, file)
+			) {
 				return dep;
 			}
 		}
