@@ -191,22 +191,8 @@ export class Container extends (EventEmitter as {
 		destination: string,
 	): Promise<void> {
 		const stat = await fs.stat(path);
-		await new Promise((resolve, reject) => {
-			const entry = pack.entry(
-				{ name: destination, size: stat.size },
-				(err?: Error) => {
-					if (err) {
-						reject(err);
-					} else {
-						resolve();
-					}
-				},
-			);
 
-			const readStream = fs.createReadStream(path);
-			readStream.on('error', reject);
-			readStream.pipe(entry);
-		});
+		pack.entry({ name: destination, size: stat.size }, await fs.readFile(path));
 	}
 
 	private getAddOperationsByDestination(
