@@ -240,8 +240,12 @@ export class Container extends (EventEmitter as {
 			// TODO: I'm not sure the logic here is actually correct,
 			// specifically the way we build the destination when the containerPath
 			// is a directory
+			const strippedPath = matchingDep.sourceIsDirectory
+				? f
+				: f.split(path.sep).pop()!;
+
 			const toPath = matchingDep.destinationIsDirectory
-				? path.join(matchingDep.containerPath, f.split(path.sep).pop()!)
+				? path.join(matchingDep.containerPath, strippedPath)
 				: matchingDep.containerPath;
 
 			return {

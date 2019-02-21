@@ -378,6 +378,37 @@ describe('Containers', () => {
 						.that.equals(fileB);
 				});
 
+				it('should correctly consider subdirectories when copying files', async () => {
+					const context = path.join(__dirname, 'contexts', 'b');
+
+					const container = new Container(
+						await readFile(path.join(context, 'Dockerfile'), {
+							encoding: 'utf8',
+						}),
+						context,
+						currentContainer.id,
+						docker,
+					);
+
+					const changedFiles = new FileUpdates({
+						updated: ['test/test.ts'],
+						deleted: [],
+						added: [],
+					});
+
+					const actions = container.actionsNeeded(changedFiles);
+					expect(actions).to.have.length(1);
+
+					expect(
+						(container as any).getOperations(['test/test.ts'], actions[0]),
+					).to.deep.equal([
+						{
+							fromPath: 'test/test.ts',
+							toPath: '/usr/src/app/test/test.ts',
+						},
+					]);
+				});
+
 				it('should throw an error when the container is not running', done => {
 					const dockerfileContent = [
 						`FROM ${image}`,

@@ -71,6 +71,7 @@ describe('Dockerfile inspection', () => {
 			expect(actionGroup.fileDependencies[0]).to.deep.equal({
 				localPath: 'a.ts',
 				destinationIsDirectory: false,
+				sourceIsDirectory: false,
 				containerPath: '/b.ts',
 			});
 			expect(actionGroup.commands).to.deep.equal([
@@ -103,6 +104,7 @@ describe('Dockerfile inspection', () => {
 			expect(actionGroup.fileDependencies[0]).to.deep.equal({
 				localPath: 'a.ts',
 				destinationIsDirectory: false,
+				sourceIsDirectory: false,
 				containerPath: '/b.ts',
 			});
 			expect(actionGroup.commands).to.deep.equal([
@@ -133,6 +135,7 @@ describe('Dockerfile inspection', () => {
 				{
 					localPath: 'a.ts',
 					destinationIsDirectory: false,
+					sourceIsDirectory: false,
 					containerPath: '/usr/src/app/b.ts',
 				},
 			]);
@@ -145,6 +148,7 @@ describe('Dockerfile inspection', () => {
 				{
 					localPath: 'c.ts',
 					destinationIsDirectory: false,
+					sourceIsDirectory: false,
 					containerPath: '/usr/src/app/src/d.ts',
 				},
 			]);
@@ -174,12 +178,14 @@ describe('Dockerfile inspection', () => {
 				{
 					localPath: 'c.ts',
 					destinationIsDirectory: true,
+					sourceIsDirectory: false,
 					containerPath: '/usr/src/app/',
 				},
 				{
 					localPath: 'd.ts',
 					destinationIsDirectory: true,
 					containerPath: '/usr/src/app/',
+					sourceIsDirectory: false,
 				},
 			]);
 		});
@@ -217,11 +223,13 @@ describe('Dockerfile inspection', () => {
 					{
 						localPath: 'a.test',
 						destinationIsDirectory: false,
+						sourceIsDirectory: false,
 						containerPath: '/usr/src/app/b.test',
 					},
 					{
 						localPath: 'c.test',
 						destinationIsDirectory: false,
+						sourceIsDirectory: false,
 						containerPath: '/usr/src/app/d.test',
 					},
 				],
@@ -245,6 +253,7 @@ describe('Dockerfile inspection', () => {
 				{
 					localPath: 'a.test',
 					destinationIsDirectory: true,
+					sourceIsDirectory: false,
 					containerPath: '/usr/src/app',
 				},
 			]);

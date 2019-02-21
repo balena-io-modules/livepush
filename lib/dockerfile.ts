@@ -34,6 +34,10 @@ export interface FileDependency {
 	 * Does the container path point to a directory or a file?
 	 */
 	destinationIsDirectory: boolean;
+	/**
+	 * Does the source path point to a directory or file?
+	 */
+	sourceIsDirectory: boolean;
 }
 
 export type Command = string;
@@ -248,10 +252,12 @@ class Dockerfile {
 		}
 
 		return copyArgs.map(arg => {
+			const normalized = path.normalize(arg);
 			return {
-				localPath: path.normalize(arg),
+				localPath: normalized,
 				containerPath: dest,
 				destinationIsDirectory: isDir || Dockerfile.isDirectory(dest),
+				sourceIsDirectory: Dockerfile.isDirectory(normalized),
 			};
 		});
 	}
