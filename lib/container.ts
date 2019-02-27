@@ -254,6 +254,14 @@ export class Container extends (EventEmitter as {
 					);
 				}
 
+				// We can also check if the host path is a directory (only if it's not obvious
+				// from the dockerfile)
+				if (!matchingDep.sourceIsDirectory) {
+					matchingDep.sourceIsDirectory = await Container.hostPathIsDirectory(
+						Path.join(this.hostContextPath, f),
+					);
+				}
+
 				const strippedPath = matchingDep.sourceIsDirectory
 					? f
 					: f.split(Path.sep).pop()!;
@@ -277,6 +285,11 @@ export class Container extends (EventEmitter as {
 			path,
 		]);
 		return output.exitCode === 0;
+	});
+
+	private static hostPathIsDirectory = _.memoize(async (path: string) => {
+		const stat = await fs.lstat(path);
+		return stat.isDirectory();
 	});
 
 	private async executeCommandInternal(
