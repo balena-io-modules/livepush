@@ -7,6 +7,7 @@ import * as Docker from 'dockerode';
 import * as _ from 'lodash';
 import { fs } from 'mz';
 import * as path from 'path';
+import * as tarFs from 'tar-fs';
 import * as tar from 'tar-stream';
 
 import Container, { FileUpdates } from '../lib/container';
@@ -73,6 +74,27 @@ const addFileToContainer = async (
 };
 
 const readFile = _.memoize(fs.readFile);
+
+const buildContext = async (context: string): Promise<string> => {
+	console.log('Building context:', context);
+	const buildStream = await docker.buildImage(tarFs.pack(context), {
+		t: 'livepush-test-image:latest',
+	});
+
+	await new Promise((resolve, reject) => {
+		buildStream.on('end', resolve);
+		buildStream.on('error', reject);
+		buildStream.resume();
+	});
+
+	const container = await docker.createContainer({
+		Image: 'livepush-test-image',
+		Tty: true,
+	});
+	await container.start();
+
+	return container.id;
+};
 
 describe('Containers', () => {
 	describe('Interaction', () => {
@@ -400,7 +422,10 @@ describe('Containers', () => {
 					expect(actions).to.have.length(1);
 
 					expect(
-						(container as any).getOperations(['test/test.ts'], actions[0]),
+						await (container as any).getOperations(
+							['test/test.ts'],
+							actions[0],
+						),
 					).to.deep.equal([
 						{
 							fromPath: 'test/test.ts',
@@ -699,85 +724,142 @@ describe('Containers', () => {
 				});
 			});
 		});
+
+		describe('Container Utilities', () => {
+			describe('Container commands', () => {
+				const genCommand = (Container as any).generateContainerCommand;
+
+				it('should correctly generate commands to run inside the container', () => {
+					expect(genCommand('apt-get install')).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						`apt-get install`,
+					]);
+				});
+
+				it('should correctly add env vars to shell commands', () => {
+					expect(genCommand('JOBS=max apt-get install')).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						`JOBS=max apt-get install`,
+					]);
+				});
+
+				it('should correctly quote strings in commands', () => {
+					expect(genCommand(`echo 'this is a test string'`)).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						`echo \'this is a test string\'`,
+					]);
+
+					expect(genCommand(`echo "this is a test string"`)).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						`echo \"this is a test string\"`,
+					]);
+				});
+
+				it('should correctly handle operators in commands', () => {
+					expect(
+						genCommand(`apt-get update && apt-get install curl`),
+					).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						`apt-get update && apt-get install curl`,
+					]);
+				});
+
+				it('should correctly handle operators and strings', () => {
+					expect(
+						genCommand(
+							`git config ---global user.email test@test.com && git config --global user.name 'test person'`,
+						),
+					).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						`git config ---global user.email test@test.com && git config --global user.name \'test person\'`,
+					]);
+				});
+
+				it('should correctly handle globs', () => {
+					expect(genCommand('ls test/*.ts')).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						`ls test/*.ts`,
+					]);
+				});
+
+				it('should handle escaping', () => {
+					expect(genCommand(`TEST=123 echo "\\$TEST"`)).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						`TEST=123 echo "\\$TEST"`,
+					]);
+
+					expect(genCommand(`echo "this \\"is a string\\""`)).to.deep.equal([
+						'/bin/sh',
+						'-c',
+						'echo "this \\"is a string\\""',
+					]);
+				});
+			});
+		});
 	});
+	describe('E2E', () => {
+		it('should correctly handle directory copies', async () => {
+			const context = path.join(__dirname, 'contexts', 'dir-copy');
+			const dockerfileContent = await readFile(
+				path.join(context, 'Dockerfile'),
+				'utf8',
+			);
 
-	describe('Container Utilities', () => {
-		describe('Container commands', () => {
-			const genCommand = (Container as any).generateContainerCommand;
+			const containerId = await buildContext(context);
 
-			it('should correctly generate commands to run inside the container', () => {
-				expect(genCommand('apt-get install')).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					`apt-get install`,
-				]);
-			});
+			const fileToChange = path.join(context, 'src', 'index.ts');
+			const cachedFile = await readFile(fileToChange, 'utf8');
 
-			it('should correctly add env vars to shell commands', () => {
-				expect(genCommand('JOBS=max apt-get install')).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					`JOBS=max apt-get install`,
-				]);
-			});
+			try {
+				const container = new Container(
+					dockerfileContent,
+					context,
+					containerId,
+					docker,
+				);
 
-			it('should correctly quote strings in commands', () => {
-				expect(genCommand(`echo 'this is a test string'`)).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					`echo \'this is a test string\'`,
-				]);
+				const newData = `${cachedFile}\nconsole.log('test')`;
+				await fs.writeFile(fileToChange, newData);
+				const changedFiles = new FileUpdates({
+					updated: ['src/index.ts'],
+					deleted: [],
+					added: [],
+				});
 
-				expect(genCommand(`echo "this is a test string"`)).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					`echo \"this is a test string\"`,
-				]);
-			});
+				const actions = container.actionsNeeded(changedFiles);
+				expect(actions).to.have.length(1);
 
-			it('should correctly handle operators in commands', () => {
 				expect(
-					genCommand(`apt-get update && apt-get install curl`),
+					await (container as any).getOperations(['src/index.ts'], actions[0]),
 				).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					`apt-get update && apt-get install curl`,
-				]);
-			});
-
-			it('should correctly handle operators and strings', () => {
-				expect(
-					genCommand(
-						`git config ---global user.email test@test.com && git config --global user.name 'test person'`,
-					),
-				).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					`git config ---global user.email test@test.com && git config --global user.name \'test person\'`,
-				]);
-			});
-
-			it('should correctly handle globs', () => {
-				expect(genCommand('ls test/*.ts')).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					`ls test/*.ts`,
-				]);
-			});
-
-			it('should handle escaping', () => {
-				expect(genCommand(`TEST=123 echo "\\$TEST"`)).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					`TEST=123 echo "\\$TEST"`,
+					{
+						fromPath: 'src/index.ts',
+						toPath: '/usr/src/app/src/index.ts',
+					},
 				]);
 
-				expect(genCommand(`echo "this \\"is a string\\""`)).to.deep.equal([
-					'/bin/sh',
-					'-c',
-					'echo "this \\"is a string\\""',
-				]);
-			});
+				await container.performActions(changedFiles, actions);
+
+				const files = await getDirectoryFromContainer(
+					container.containerId,
+					'/usr/src/app',
+				);
+
+				expect(files)
+					.to.have.property('app/src/index.ts')
+					.that.has.property('data')
+					.that.equals(newData);
+			} finally {
+				await fs.writeFile(fileToChange, cachedFile);
+			}
 		});
 	});
 });
