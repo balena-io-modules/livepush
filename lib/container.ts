@@ -270,7 +270,7 @@ export class Container extends (EventEmitter as {
 		);
 	}
 
-	private async containerPathIsDirectory(path: string) {
+	private containerPathIsDirectory = _.memoize(async (path: string) => {
 		const output = await this.executeCommandInternal([
 			'/usr/bin/test',
 			'-d',
