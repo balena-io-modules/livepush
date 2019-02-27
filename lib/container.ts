@@ -3,7 +3,7 @@ import * as Dockerode from 'dockerode';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
 import { fs } from 'mz';
-import * as path from 'path';
+import * as Path from 'path';
 import * as escape from 'shell-escape';
 import * as shell from 'shell-quote';
 import * as Stream from 'stream';
@@ -74,6 +74,9 @@ interface ContainerEvents {
 type ContainerEventEmitter = StrictEventEmitter<EventEmitter, ContainerEvents>;
 
 export class Container extends (EventEmitter as {
+	// We need to avoid the tslint errors here, as typescript
+	// will not accept the changes proposed
+	// tslint:disable-next-line
 	new (): ContainerEventEmitter;
 }) {
 	private dockerfile: Dockerfile;
@@ -154,7 +157,7 @@ export class Container extends (EventEmitter as {
 				const pack = tar.pack();
 
 				for (const operation of operations) {
-					const pathOnDisk = path.join(
+					const pathOnDisk = Path.join(
 						this.hostContextPath,
 						operation.fromPath,
 					);
@@ -162,7 +165,7 @@ export class Container extends (EventEmitter as {
 					await this.addFileToTarPack(
 						pack,
 						pathOnDisk,
-						path.relative(destination, operation.toPath),
+						Path.relative(destination, operation.toPath),
 					);
 				}
 
@@ -191,22 +194,8 @@ export class Container extends (EventEmitter as {
 		destination: string,
 	): Promise<void> {
 		const stat = await fs.stat(path);
-		await new Promise((resolve, reject) => {
-			const entry = pack.entry(
-				{ name: destination, size: stat.size },
-				(err?: Error) => {
-					if (err) {
-						reject(err);
-					} else {
-						resolve();
-					}
-				},
-			);
 
-			const readStream = fs.createReadStream(path);
-			readStream.on('error', reject);
-			readStream.pipe(entry);
-		});
+		pack.entry({ name: destination, size: stat.size }, await fs.readFile(path));
 	}
 
 	private getAddOperationsByDestination(
@@ -215,7 +204,7 @@ export class Container extends (EventEmitter as {
 		// TODO: This could be made more efficient, as we could integrate
 		// the subdirectories into a single group, as this can be done
 		// when uploading with a tar file
-		return _.groupBy(ops, op => path.dirname(op.toPath));
+		return _.groupBy(ops, op => Path.dirname(op.toPath));
 	}
 
 	private getAddOperations(
@@ -254,8 +243,12 @@ export class Container extends (EventEmitter as {
 			// TODO: I'm not sure the logic here is actually correct,
 			// specifically the way we build the destination when the containerPath
 			// is a directory
+			const strippedPath = matchingDep.sourceIsDirectory
+				? f
+				: f.split(Path.sep).pop()!;
+
 			const toPath = matchingDep.destinationIsDirectory
-				? path.join(matchingDep.containerPath, f.split(path.sep).pop()!)
+				? Path.join(matchingDep.containerPath, strippedPath)
 				: matchingDep.containerPath;
 
 			return {
@@ -307,7 +300,20 @@ export class Container extends (EventEmitter as {
 	}
 
 	private static generateContainerCommand(command: string): string[] {
-		return shell.parse(escape(['/bin/sh', '-c', `${command}`]));
+		return shell.parse(escape(['/bin/sh', '-c', `${command}`])).map(entry => {
+			if (!_.isString(entry)) {
+				const entryObj: { [key: string]: string } = entry;
+				if (entryObj.op != null) {
+					if (entryObj.op === 'glob') {
+						return entryObj.pattern;
+					} else {
+						return entryObj.op;
+					}
+				}
+				return '';
+			}
+			return entry;
+		});
 	}
 }
 
