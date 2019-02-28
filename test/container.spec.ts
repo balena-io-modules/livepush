@@ -861,5 +861,60 @@ describe('Containers', () => {
 				await fs.writeFile(fileToChange, cachedFile);
 			}
 		});
+
+		it('should correctly handle non-directory copies', async () => {
+			const context = path.join(__dirname, 'contexts', 'no-dir-copy');
+			const dockerfileContent = await readFile(
+				path.join(context, 'Dockerfile'),
+				'utf8',
+			);
+
+			const containerId = await buildContext(context);
+			const fileToChange = path.join(context, 'index.ts');
+			const cachedFile = await readFile(fileToChange, 'utf8');
+
+			try {
+				const container = new Container(
+					dockerfileContent,
+					context,
+					containerId,
+					docker,
+				);
+
+				const newData = `${cachedFile}\nconsole.log('test')`;
+				await fs.writeFile(fileToChange, newData);
+				const changedFiles = new FileUpdates({
+					updated: ['index.ts'],
+					deleted: [],
+					added: [],
+				});
+
+				const actions = container.actionsNeeded(changedFiles);
+				expect(actions).to.have.length(1);
+
+				expect(
+					await (container as any).getOperations(['index.ts'], actions[0]),
+				).to.deep.equal([
+					{
+						fromPath: 'index.ts',
+						toPath: '/usr/src/app/index.ts',
+					},
+				]);
+
+				await container.performActions(changedFiles, actions);
+
+				const files = await getDirectoryFromContainer(
+					container.containerId,
+					'/usr/src/app',
+				);
+
+				expect(files)
+					.to.have.property('app/index.ts')
+					.that.has.property('data')
+					.that.equals(newData);
+			} finally {
+				await fs.writeFile(fileToChange, cachedFile);
+			}
+		});
 	});
 });
