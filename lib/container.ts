@@ -264,7 +264,7 @@ export class Container extends (EventEmitter as {
 
 				const strippedPath = matchingDep.sourceIsDirectory
 					? f
-					: f.split(Path.sep).pop()!;
+					: Path.basename(f);
 
 				const toPath = matchingDep.destinationIsDirectory
 					? Path.join(matchingDep.containerPath, strippedPath)
