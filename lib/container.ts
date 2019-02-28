@@ -111,12 +111,12 @@ export class Container extends (EventEmitter as {
 			// get the affected files for this action group
 			const updated = files.addedAndUpdated();
 
-			const toAdd = this.getAddOperations(
+			const toAdd = await this.getAddOperations(
 				Dockerfile.fileMatchesForActionGroup(updated, actionGroup),
 				actionGroup,
 			);
 
-			const toDelete = this.getDeleteOperations(
+			const toDelete = await this.getDeleteOperations(
 				Dockerfile.fileMatchesForActionGroup(files.deleted(), actionGroup),
 				actionGroup,
 			);
@@ -207,54 +207,134 @@ export class Container extends (EventEmitter as {
 		return _.groupBy(ops, op => Path.dirname(op.toPath));
 	}
 
-	private getAddOperations(
+	private async getAddOperations(
 		files: string[],
 		actionGroup: DockerfileActionGroup,
-	): AddOperation[] {
-		return this.getOperations(files, actionGroup);
+	): Promise<AddOperation[]> {
+		return await this.getOperations(files, actionGroup);
 	}
 
-	private getDeleteOperations(
+	private async getDeleteOperations(
 		files: string[],
 		actionGroup: DockerfileActionGroup,
-	): DeleteOperation[] {
+	): Promise<DeleteOperation[]> {
 		// for every file that we need to delete, find out where it was sent to
 		// and return the in-container path
-		return _.map(this.getOperations(files, actionGroup), 'toPath');
+		return _.map(await this.getOperations(files, actionGroup), 'toPath');
 	}
 
-	private getOperations(
+	private async getOperations(
 		files: string[],
 		actionGroup: DockerfileActionGroup,
-	): Array<{ fromPath: string; toPath: string }> {
-		return files.map(f => {
-			const matchingDep = Dockerfile.getActionGroupFileDependency(
-				f,
-				actionGroup,
-			);
-
-			/* istanbul ignore next */
-			if (matchingDep == null) {
-				throw new InternalInconsistencyError(
-					'Could not find matching file for action group',
+	): Promise<Array<{ fromPath: string; toPath: string }>> {
+		return Promise.all(
+			files.map(async f => {
+				const matchingDep = Dockerfile.getActionGroupFileDependency(
+					f,
+					actionGroup,
 				);
-			}
 
-			// TODO: I'm not sure the logic here is actually correct,
-			// specifically the way we build the destination when the containerPath
-			// is a directory
-			const strippedPath = matchingDep.sourceIsDirectory
-				? f
-				: f.split(Path.sep).pop()!;
+				/* istanbul ignore next */
+				if (matchingDep == null) {
+					throw new InternalInconsistencyError(
+						'Could not find matching file for action group',
+					);
+				}
 
-			const toPath = matchingDep.destinationIsDirectory
-				? Path.join(matchingDep.containerPath, strippedPath)
-				: matchingDep.containerPath;
+				// TODO: I'm not sure the logic here is actually correct,
+				// specifically the way we build the destination when the containerPath
+				// is a directory
 
-			return {
-				fromPath: f,
-				toPath,
-			};
+				// The dockerfile class tries to detect if the destination is a directory,
+				// but we can do one better with the actual container, and look directly
+				// at the destination
+				if (!matchingDep.destinationIsDirectory) {
+					matchingDep.destinationIsDirectory = await this.containerPathIsDirectory(
+						matchingDep.containerPath,
+					);
+				}
+
+				// We can also check if the host path is a directory (only if it's not obvious
+				// from the dockerfile)
+				if (!matchingDep.sourceIsDirectory) {
+					matchingDep.sourceIsDirectory = await Container.hostPathIsDirectory(
+						Path.join(this.hostContextPath, f),
+					);
+				}
+
+				const strippedPath = matchingDep.sourceIsDirectory
+					? f
+					: Path.basename(f);
+
+				const toPath = matchingDep.destinationIsDirectory
+					? Path.join(matchingDep.containerPath, strippedPath)
+					: matchingDep.containerPath;
+
+				return {
+					fromPath: f,
+					toPath,
+				};
+			}),
+		);
+	}
+
+	private containerPathIsDirectory = _.memoize(async (path: string) => {
+		const output = await this.executeCommandInternal([
+			'/usr/bin/test',
+			'-d',
+			path,
+		]);
+		return output.exitCode === 0;
+	});
+
+	private static hostPathIsDirectory = _.memoize(async (path: string) => {
+		const stat = await fs.lstat(path);
+		return stat.isDirectory();
+	});
+
+	private async executeCommandInternal(
+		command: string[],
+	): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+		const stdout: Buffer[] = [];
+		const stderr: Buffer[] = [];
+
+		const exec = await this.docker.getContainer(this.containerId).exec({
+			Cmd: command,
+			AttachStderr: true,
+			AttachStdout: true,
+		});
+
+		return await new Promise<{
+			stdout: string;
+			stderr: string;
+			exitCode: number;
+		}>((resolve, reject) => {
+			exec.start((err: Error, stream: Stream.Readable) => {
+				if (err) {
+					reject(err);
+				}
+
+				const stdoutStream = new Stream.PassThrough();
+				const stderrStream = new Stream.PassThrough();
+				stream.on('error', reject);
+				stream.on('end', async () => {
+					stdoutStream.end();
+					stderrStream.end();
+					const inspect = await exec.inspect();
+					resolve({
+						stdout: Buffer.concat(stdout).toString(),
+						stderr: Buffer.concat(stderr).toString(),
+						exitCode: inspect.ExitCode,
+					});
+				});
+				this.docker.modem.demuxStream(stream, stdoutStream, stderrStream);
+				stderrStream.on('data', d => {
+					stderr.push(d);
+				});
+				stdoutStream.on('data', d => {
+					stdout.push(d);
+				});
+			});
 		});
 	}
 
