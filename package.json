@@ -17,7 +17,7 @@
     "build": "npm run clean && npm run prettify && tsc --project tsconfig.publish.json",
     "build:test": "npm run clean && tsc --project . && cp -r test/contexts build/test/",
     "test": "npm run prettify && npm run lint && npm run test:cov",
-    "test:cov": "npm run build:test && nyc mocha",
+    "test:cov": "npm run build:test && nyc --produce-source-map mocha",
     "test:fast": "npm run build:test && mocha"
   },
   "author": "Cameron Diver <cameron@balena.io>",
@@ -46,6 +46,7 @@
     "require-npm4-to-publish": "^1.0.0",
     "resin-lint": "^2.0.1",
     "sinon": "^6.1.5",
+    "source-map-support": "^0.5.10",
     "tar-fs": "^2.0.0",
     "typescript": "^3.0.1"
   },
