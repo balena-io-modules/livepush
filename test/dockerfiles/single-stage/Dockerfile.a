@@ -1,0 +1,4 @@
+FROM baseimage
+RUN somecommand
+RUN anothercommand
+RUN multi arg command
