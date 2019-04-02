@@ -15,10 +15,12 @@
     "prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"{lib,test}/**/*.ts\"",
     "lint": "resin-lint --typescript lib/ test/ && tsc --noEmit",
     "build": "npm run clean && npm run prettify && tsc --project tsconfig.publish.json",
-    "build:test": "npm run clean && tsc --project . && cp -r test/contexts build/test/",
+    "build:test": "npm run clean && tsc --project . && npm run test:copy",
     "test": "npm run prettify && npm run lint && npm run test:cov",
-    "test:cov": "npm run build:test && nyc --produce-source-map mocha",
-    "test:fast": "npm run build:test && mocha"
+    "test:cov": "npm run build:test && nyc mocha",
+    "test:copy": "cp -r test/{contexts,dockerfiles} build/test/",
+    "test:fast": "TS_NODE_FILES=true npx mocha --opts . --require ts-node/register test/**/*.spec.ts",
+    "test:watch": "TS_NODE_FILES=true npx mocha --opts . --require ts-node/register test/**/*.spec.ts --watch --watch-extensions ts"
   },
   "author": "Cameron Diver <cameron@balena.io>",
   "license": "Apache-2.0",
@@ -52,7 +54,7 @@
   },
   "dependencies": {
     "bluebird": "^3.5.1",
-    "docker-file-parser": "^1.0.3",
+    "docker-file-parser": "^1.0.4",
     "dockerode": "^2.5.6",
     "husky": "^1.1.3",
     "lodash": "^4.17.10",
@@ -62,6 +64,7 @@
     "shell-escape": "^0.2.0",
     "shell-quote": "^1.6.1",
     "strict-event-emitter-types": "^2.0.0",
+    "ts-node": "^8.0.3",
     "typed-error": "^3.0.1"
   }
 }

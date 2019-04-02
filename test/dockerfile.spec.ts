@@ -1,5 +1,5 @@
 /*
-Copyright 2018 balena Ltd
+Copyright 2019 balena Ltd
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -14,370 +14,532 @@ import 'mocha';
 
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import { fs } from 'mz';
+import * as path from 'path';
 
 chai.use(chaiAsPromised);
 
 const { assert, expect } = chai;
 
+import { DockerfileParseError, UnsupportedError } from '../lib';
+import { isChildPath, StageDependentActionGroup } from '../lib/action-group';
 import Dockerfile from '../lib/dockerfile';
 
-describe('Dockerfile inspection', () => {
-	describe('Action groups', () => {
-		it('should correctly generate simple action groups', () => {
-			const dockerfileContent = [
-				'FROM baseimage',
-				'RUN somecommand',
-				'RUN anothercommand',
-				'RUN multi arg command',
-			].join('\n');
+const dockerfileContent: Dictionary<Buffer> = {};
 
-			const dockerfile = new Dockerfile(dockerfileContent);
+describe('Dockerfile', () => {
+	before(async () => {
+		const base = path.join(__dirname, 'dockerfiles');
+		const singleStageBase = path.join(base, 'single-stage');
+		const multiStageBase = path.join(base, 'multi-stage');
 
-			expect(dockerfile.actionGroups).to.have.length(1);
+		const pairs = [[singleStageBase, 'single'], [multiStageBase, 'multi']];
 
-			const actionGroup = dockerfile.actionGroups[0];
-			expect(actionGroup.workDir).to.equal('/');
-			expect(actionGroup.fileDependencies).to.have.length(0);
+		for (const [dir, prefix] of pairs) {
+			const files = await fs.readdir(dir);
+			for (const f of files) {
+				dockerfileContent[
+					`${prefix}-${f.split('.').pop()}`
+				] = await fs.readFile(path.join(dir, f));
+			}
+		}
+	});
 
-			expect(actionGroup.commands).to.have.length(3);
-			expect(actionGroup.commands).to.deep.equal([
-				'somecommand',
-				'anothercommand',
-				'multi arg command',
-			]);
-		});
+	describe('Dockerfile parsing', () => {
+		describe('Single stage parsing', () => {
+			it('should correctly generate simple action groups', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-a']);
 
-		it('should handle simple copies', () => {
-			const dockerfileContent = [
-				'FROM baseimage',
-				'RUN somecommand',
-				'COPY a.ts b.ts',
-				'RUN anothercommand',
-				'RUN multi arg command',
-			].join('\n');
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(1);
 
-			const dockerfile = new Dockerfile(dockerfileContent);
+				const actionGroup = dockerfile.stages[0].actionGroups[0];
+				expect(actionGroup.workdir).to.equal('/');
+				expect(actionGroup.copies).to.have.length(0);
 
-			expect(dockerfile.actionGroups).to.have.length(2);
-
-			let actionGroup = dockerfile.actionGroups[0];
-			expect(actionGroup.workDir).to.equal('/');
-			expect(actionGroup.fileDependencies).to.have.length(0);
-			expect(actionGroup.commands).to.deep.equal(['somecommand']);
-
-			actionGroup = dockerfile.actionGroups[1];
-			expect(actionGroup.workDir).to.equal('/');
-			expect(actionGroup.fileDependencies).to.have.length(1);
-			expect(actionGroup.fileDependencies[0]).to.deep.equal({
-				localPath: 'a.ts',
-				destinationIsDirectory: false,
-				sourceIsDirectory: false,
-				containerPath: '/b.ts',
+				expect(actionGroup.commands).to.have.length(3);
+				expect(actionGroup.commands).to.deep.equal([
+					'somecommand',
+					'anothercommand',
+					'multi arg command',
+				]);
 			});
-			expect(actionGroup.commands).to.deep.equal([
-				'anothercommand',
-				'multi arg command',
-			]);
-		});
 
-		it('should handle copies with arguments', () => {
-			const dockerfileContent = [
-				'FROM baseimage',
-				'RUN somecommand',
-				'COPY --chown root:root a.ts b.ts',
-				'RUN anothercommand',
-				'RUN multi arg command',
-			].join('\n');
+			it('should handle simple copies', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-b']);
 
-			const dockerfile = new Dockerfile(dockerfileContent);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(2);
 
-			expect(dockerfile.actionGroups).to.have.length(2);
+				let actionGroup = dockerfile.stages[0].actionGroups[0];
+				expect(actionGroup.workdir).to.equal('/');
+				expect(actionGroup.copies).to.have.length(0);
+				expect(actionGroup.commands).to.deep.equal(['somecommand']);
 
-			let actionGroup = dockerfile.actionGroups[0];
-			expect(actionGroup.workDir).to.equal('/');
-			expect(actionGroup.fileDependencies).to.have.length(0);
-			expect(actionGroup.commands).to.deep.equal(['somecommand']);
-
-			actionGroup = dockerfile.actionGroups[1];
-			expect(actionGroup.workDir).to.equal('/');
-			expect(actionGroup.fileDependencies).to.have.length(1);
-			expect(actionGroup.fileDependencies[0]).to.deep.equal({
-				localPath: 'a.ts',
-				destinationIsDirectory: false,
-				sourceIsDirectory: false,
-				containerPath: '/b.ts',
+				actionGroup = dockerfile.stages[0].actionGroups[1];
+				expect(actionGroup.workdir).to.equal('/');
+				expect(actionGroup.copies).to.have.length(1);
+				expect(actionGroup.copies[0]).to.deep.equal({
+					source: 'a.ts',
+					dest: '/b.ts',
+				});
+				expect(actionGroup.commands).to.deep.equal([
+					'anothercommand',
+					'multi arg command',
+				]);
 			});
-			expect(actionGroup.commands).to.deep.equal([
-				'anothercommand',
-				'multi arg command',
-			]);
-		});
 
-		it('should handle workdir commands', () => {
-			const dockerfileContent = [
-				'FROM baseimage',
-				'WORKDIR /usr/src/app',
-				'COPY a.ts b.ts',
-				'RUN anothercommand',
-				'WORKDIR /usr/src/app/src/',
-				'COPY c.ts d.ts',
-				'RUN multi arg command',
-				'RUN command2',
-			].join('\n');
+			it('should handle multiple copies', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-c']);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(3);
 
-			const dockerfile = new Dockerfile(dockerfileContent);
-
-			expect(dockerfile.actionGroups).to.have.length(2);
-
-			let actionGroup = dockerfile.actionGroups[0];
-			expect(actionGroup.workDir).to.equal('/usr/src/app');
-			expect(actionGroup.fileDependencies).to.deep.equal([
-				{
-					localPath: 'a.ts',
-					destinationIsDirectory: false,
-					sourceIsDirectory: false,
-					containerPath: '/usr/src/app/b.ts',
-				},
-			]);
-			expect(actionGroup.commands).to.have.length(1);
-			expect(actionGroup.commands).to.deep.equal(['anothercommand']);
-
-			actionGroup = dockerfile.actionGroups[1];
-			expect(actionGroup.workDir).to.equal('/usr/src/app/src/');
-			expect(actionGroup.fileDependencies).to.deep.equal([
-				{
-					localPath: 'c.ts',
-					destinationIsDirectory: false,
-					sourceIsDirectory: false,
-					containerPath: '/usr/src/app/src/d.ts',
-				},
-			]);
-			expect(actionGroup.commands).to.have.length(2);
-			expect(actionGroup.commands).to.deep.equal([
-				'multi arg command',
-				'command2',
-			]);
-		});
-
-		it('should handle multiple file copies to a single destination', () => {
-			const dockerfileContent = [
-				'FROM baseimage',
-				'WORKDIR /usr/src/app',
-				'COPY c.ts d.ts ./',
-				'RUN command',
-				'CMD command2',
-			].join('\n');
-
-			const dockerfile = new Dockerfile(dockerfileContent);
-
-			expect(dockerfile.actionGroups).to.have.length(1);
-
-			const actionGroup = dockerfile.actionGroups[0];
-			expect(actionGroup.workDir).to.equal('/usr/src/app');
-			expect(actionGroup.fileDependencies).to.deep.equal([
-				{
-					localPath: 'c.ts',
-					destinationIsDirectory: true,
-					sourceIsDirectory: false,
-					containerPath: '/usr/src/app/',
-				},
-				{
-					localPath: 'd.ts',
-					destinationIsDirectory: true,
-					containerPath: '/usr/src/app/',
-					sourceIsDirectory: false,
-				},
-			]);
-		});
-
-		it('should handle a COPY before a CMD', () => {
-			const dockerfileContent = [
-				'FROM image',
-				'WORKDIR /usr/src/app',
-				'COPY a.test b.test',
-				'CMD test',
-			].join('\n');
-
-			const dockerfile = new Dockerfile(dockerfileContent);
-			expect(dockerfile.actionGroups).to.have.length(1);
-		});
-
-		it('should correctly detect multiple file dependencies', () => {
-			const dockerfileContent = [
-				'FROM image',
-				'WORKDIR /usr/src/app',
-				'COPY a.test b.test',
-				'COPY c.test d.test',
-				'RUN command',
-				'RUN command2',
-				'CMD test',
-			].join('\n');
-
-			const dockerfile = new Dockerfile(dockerfileContent);
-			expect(dockerfile.actionGroups).to.have.length(1);
-
-			const ag = dockerfile.actionGroups[0];
-			expect(ag).to.deep.equal({
-				workDir: '/usr/src/app',
-				fileDependencies: [
+				const actionGroup = dockerfile.stages[0].actionGroups[2];
+				expect(actionGroup.workdir).to.equal('/');
+				expect(actionGroup.copies).to.have.length(1);
+				expect(actionGroup.commands).to.deep.equal(['second anothercommand']);
+				expect(actionGroup.copies).to.deep.equal([
 					{
-						localPath: 'a.test',
-						destinationIsDirectory: false,
-						sourceIsDirectory: false,
-						containerPath: '/usr/src/app/b.test',
+						source: 'c.ts',
+						dest: '/d.ts',
+					},
+				]);
+			});
+
+			it('should handle copies with arguments', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-d']);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(2);
+
+				const actionGroup = dockerfile.stages[0].actionGroups[1];
+				expect(actionGroup.copies).to.deep.equal([
+					{
+						source: 'a.ts',
+						dest: '/b.ts',
+					},
+				]);
+			});
+
+			it('should handle workdir commands', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-e']);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(2);
+
+				let actionGroup = dockerfile.stages[0].actionGroups[0];
+				expect(actionGroup.workdir).to.equal('/usr/src/app');
+				expect(actionGroup.copies).to.deep.equal([
+					{
+						source: 'a.ts',
+						dest: '/usr/src/app/b.ts',
+					},
+				]);
+
+				actionGroup = dockerfile.stages[0].actionGroups[1];
+				expect(actionGroup.workdir).to.equal('/usr/src/app/src/');
+				expect(actionGroup.copies).to.deep.equal([
+					{
+						source: 'c.ts',
+						dest: '/usr/src/app/src/d.ts',
+					},
+				]);
+			});
+
+			it('should handle multiple file copies to a single destination', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-f']);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(1);
+
+				const actionGroup = dockerfile.stages[0].actionGroups[0];
+
+				expect(actionGroup.workdir).to.equal('/usr/src/app');
+				expect(actionGroup.copies).to.deep.equal([
+					{ source: 'c.ts', dest: '/usr/src/app/' },
+					{ source: 'd.ts', dest: '/usr/src/app/' },
+				]);
+			});
+
+			it('should handle a COPY before a CMD', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-g']);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(1);
+			});
+
+			it('should correctly detect multiple file dependencies', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-h']);
+
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+
+				expect(dockerfile.stages[0].actionGroups).to.have.length(1);
+
+				const actionGroup = dockerfile.stages[0].actionGroups[0];
+
+				expect(actionGroup.workdir).to.equal('/usr/src/app');
+				expect(actionGroup.copies).to.deep.equal([
+					{
+						source: 'a.test',
+						dest: '/usr/src/app/b.test',
 					},
 					{
-						localPath: 'c.test',
-						destinationIsDirectory: false,
-						sourceIsDirectory: false,
-						containerPath: '/usr/src/app/d.test',
+						source: 'c.test',
+						dest: '/usr/src/app/d.test',
 					},
-				],
-				commands: ['command', 'command2'],
+				]);
+				expect(actionGroup.commands).to.deep.equal(['command', 'command2']);
+			});
+
+			it('should correctly generate copies to the current directory', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-i']);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0])
+					.to.have.property('isLast')
+					.that.equals(true);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(1);
+
+				const actionGroup = dockerfile.stages[0].actionGroups[0];
+
+				expect(actionGroup.copies).to.deep.equal([
+					{
+						source: 'a.test',
+						dest: '/usr/src/app',
+					},
+				]);
+			});
+
+			it('should throw when an ADD operation is used', () => {
+				expect(() => new Dockerfile(dockerfileContent['single-l'])).to.throw(
+					UnsupportedError,
+				);
+			});
+
+			it('should throw on an incorrect FROM line', () => {
+				expect(() => new Dockerfile(dockerfileContent['single-m'])).to.throw(
+					DockerfileParseError,
+				);
+			});
+
+			it('should not return any matches when there is none', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-n']);
+				expect(dockerfile.getActionGroupsFromChangedFiles(['a'])).to.deep.equal(
+					{},
+				);
+			});
+
+			it('should group multiple consecutive copies in a single stage', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-o']);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(1);
+				expect(dockerfile.stages[0].actionGroups[0].copies).to.have.length(2);
+			});
+
+			it('should correctly handle absolute paths', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-p']);
+				expect(dockerfile.stages[0].actionGroups[0])
+					.to.have.property('copies')
+					.that.deep.equals([{ source: 'a', dest: '/usr/src/app/b' }]);
+			});
+
+			it('should throw when calling processRunArgs with an object', () => {
+				expect(() => (Dockerfile as any).processRunArgs({})).to.throw(
+					DockerfileParseError,
+				);
+			});
+
+			it('should throw when calling copyArgsToCopies with an incorrect input', () => {
+				expect(() =>
+					(Dockerfile as any).removeFlags(['--from=', 'test']),
+				).to.throw(DockerfileParseError);
 			});
 		});
 
-		it('should correctly generate copies to the current directory', () => {
-			const dockerfileContent = [
-				'FROM test',
-				'WORKDIR /usr/src/app',
-				'COPY a.test .',
-				'CMD cmd',
-			].join('\n');
+		describe('Multi-stage parsing', () => {
+			it('should correctly detect multiple stages', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-a']);
+				expect(dockerfile.stages).to.have.length(3);
+				expect(dockerfile.stages[2])
+					.to.have.property('isLast')
+					.that.equals(true);
 
-			const dockerfile = new Dockerfile(dockerfileContent);
-			expect(dockerfile.actionGroups).to.have.length(1);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(1);
+				expect(dockerfile.stages[1].actionGroups).to.have.length(1);
+				expect(dockerfile.stages[2].actionGroups).to.have.length(1);
 
-			const ag = dockerfile.actionGroups[0];
-			expect(ag.fileDependencies).to.deep.equal([
-				{
-					localPath: 'a.test',
-					destinationIsDirectory: true,
-					sourceIsDirectory: false,
-					containerPath: '/usr/src/app',
-				},
-			]);
+				expect(dockerfile.stages[0].actionGroups[0].commands).to.deep.equal([
+					'command',
+				]);
+				expect(dockerfile.stages[1].actionGroups[0].commands).to.deep.equal([
+					'command2',
+				]);
+				expect(dockerfile.stages[2].actionGroups[0].commands).to.deep.equal([
+					'command3',
+				]);
+			});
+
+			it('should correctly detect stage dependencies', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-a']);
+				expect(dockerfile.stages[1].actionGroups[0])
+					.to.have.property('dependentOnStage')
+					.that.equals(true);
+				expect(dockerfile.stages[1].actionGroups[0])
+					.to.have.property('stageDependency')
+					.that.equals(0);
+				expect(dockerfile.stages[2].actionGroups[0])
+					.to.have.property('dependentOnStage')
+					.that.equals(true);
+				expect(dockerfile.stages[2].actionGroups[0])
+					.to.have.property('stageDependency')
+					.that.equals(1);
+			});
+
+			it('should correctly detect multiple stage dependencies within a single stage', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-b']);
+				expect(dockerfile.stages).to.have.length(3);
+				expect(dockerfile.stages[2])
+					.to.have.property('isLast')
+					.that.equals(true);
+
+				expect(dockerfile.stages[2].actionGroups).to.have.length(2);
+				let actionGroup = dockerfile.stages[2].actionGroups[0];
+				expect(actionGroup)
+					.to.have.property('dependentOnStage')
+					.that.equals(true);
+				expect(actionGroup)
+					.to.have.property('stageDependency')
+					.that.equals(1);
+				expect(actionGroup.commands).to.have.length(0);
+				expect(actionGroup.copies).to.deep.equal([
+					{
+						source: 'test2',
+						dest: '/usr/src/app/test3',
+						sourceStage: 1,
+					},
+				]);
+				actionGroup = dockerfile.stages[2].actionGroups[1];
+				expect(actionGroup)
+					.to.have.property('dependentOnStage')
+					.that.equals(true);
+				expect(actionGroup)
+					.to.have.property('stageDependency')
+					.that.equals(2);
+				expect(actionGroup.commands).to.deep.equal(['command3']);
+				expect(actionGroup.copies).to.deep.equal([
+					{
+						source: 'test3',
+						dest: '/usr/src/app/test4',
+						sourceStage: 2,
+					},
+				]);
+			});
+
+			it('should correctly find stage names', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-c']);
+				expect(dockerfile.stages).to.have.length(2);
+
+				expect(dockerfile.stages[0].name).to.equal('base');
+				expect(dockerfile.stages[1].dependentOnStages).to.deep.equal([0]);
+			});
+
+			it('should support accessing stages by index', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-d']);
+				expect(dockerfile.stages).to.have.length(2);
+				expect(dockerfile.stages[1].dependentOnStages).to.deep.equal([0]);
+			});
+
+			it('should throw when a stage name cannot be found', () => {
+				expect(() => new Dockerfile(dockerfileContent['multi-e'])).to.throw(
+					DockerfileParseError,
+				);
+			});
+
+			it('should group consecutive copies referencing the same stage together', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-f']);
+
+				expect(dockerfile.stages).to.have.length(2);
+				expect(dockerfile.stages[1].actionGroups).to.have.length(1);
+			});
 		});
 	});
 
-	describe('Action group trigger detection', () => {
-		// FIXME: Should throw an error when the Dockerfile has changed
-		// as currently that should force a full rebuild
+	describe('Trigger detection', () => {
+		describe('Single stage file trigger detection', () => {
+			it('should detect affected action groups', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-b']);
 
-		it('should detect action groups to trigger from simple copies', () => {
-			const dockerfileContent = [
-				'FROM baseimage',
-				'RUN command1',
-				'COPY a.ts b.ts',
-				'RUN command2',
-				'RUN command3',
-				'COPY c.ts d.ts',
-				'RUN command4',
-			].join('\n');
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(2);
 
-			const dockerfile = new Dockerfile(dockerfileContent);
+				const stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'a.ts',
+				]);
+				const stagedActionGroups2 = dockerfile.getActionGroupsFromChangedFiles([
+					'./a.ts',
+				]);
 
-			let groups = dockerfile.getActionGroupsFromChangedFiles(['a.ts']);
-			expect(groups).to.have.length(2);
-			expect(groups[0].commands).to.have.length(2);
+				expect(stagedActionGroups).to.deep.equal(stagedActionGroups2);
+				expect(stagedActionGroups).to.have.property('0');
+				expect(stagedActionGroups[0]).to.deep.equal([
+					{
+						copies: [
+							{
+								source: 'a.ts',
+								dest: '/b.ts',
+							},
+						],
+						commands: ['anothercommand', 'multi arg command'],
+						dependentOnStage: false,
+						workdir: '/',
+					},
+				]);
+			});
 
-			groups = dockerfile.getActionGroupsFromChangedFiles(['c.ts']);
-			expect(groups).to.have.length(1);
-			expect(groups[0].commands).to.have.length(1);
+			it('should detect triggers from globbed copies', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-j']);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(3);
 
-			groups = dockerfile.getActionGroupsFromChangedFiles(['d.ts']);
-			expect(groups).to.have.length(0);
+				let stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'src/app.ts',
+				]);
+
+				expect(stagedActionGroups).to.have.property('0');
+				let actionGroups = stagedActionGroups[0];
+				expect(actionGroups).to.have.length(2);
+
+				stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'test/test.ts',
+				]);
+				expect(stagedActionGroups).to.have.property('0');
+				actionGroups = stagedActionGroups[0];
+				expect(actionGroups).to.have.length(1);
+			});
+
+			it('should detect action groups to trigger from directory copies', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-k']);
+				let stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'src/app.ts',
+				]);
+
+				expect(stagedActionGroups).to.have.property('0');
+				expect(stagedActionGroups[0]).to.have.length(2);
+
+				stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'main.ts',
+				]);
+				expect(stagedActionGroups).to.have.property('0');
+				expect(stagedActionGroups[0]).to.have.length(1);
+			});
 		});
 
-		it('should detect action groups to trigger from globbed copies', () => {
-			const dockerfileContent = [
-				'FROM baseimage',
-				'RUN command1',
-				'COPY src/* src/',
-				'RUN command2',
-				'RUN command3',
-				'COPY test/* test/',
-				'RUN command4',
-			].join('\n');
+		describe('Multistage trigger detection', () => {
+			it('should detect when a stage becomes invalidated due to a parent stage', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-g']);
+				expect(dockerfile.stages).to.have.length(4);
+				// Trigger a file at the root, and check that the second stage triggers
+				// (we'll check for propagation below so we can define the test more accurately)
+				const stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'trigger',
+				]);
 
-			const dockerfile = new Dockerfile(dockerfileContent);
+				expect(stagedActionGroups)
+					.to.have.property('0')
+					.that.has.length(1);
+				expect(stagedActionGroups)
+					.to.have.property('1')
+					.that.has.length(1);
 
-			let groups = dockerfile.getActionGroupsFromChangedFiles(['src/a.ts']);
-			expect(groups).to.have.length(2);
-			expect(groups[0].commands).to.have.length(2);
-			expect(groups[1].commands).to.have.length(1);
+				const childStage = stagedActionGroups[1];
+				expect(childStage[0].commands).to.deep.equal(['command2']);
+				expect(childStage[0].dependentOnStage).to.equal(true);
+				expect(
+					(childStage[0] as StageDependentActionGroup).stageDependency,
+				).to.equal(0);
+				expect(childStage[0].workdir).to.equal('/');
+			});
 
-			groups = dockerfile.getActionGroupsFromChangedFiles(['test/a.ts']);
-			expect(groups).to.have.length(1);
-			expect(groups[0].commands).to.have.length(1);
+			it('should propagate stage changes', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-g']);
+				const stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'trigger',
+				]);
 
-			groups = dockerfile.getActionGroupsFromChangedFiles([
-				'src/a.ts',
-				'test/a.ts',
-			]);
-			expect(groups).to.have.length(2);
+				expect(stagedActionGroups)
+					.to.have.property('2')
+					.that.has.length(1);
+				expect(stagedActionGroups)
+					.to.have.property('3')
+					.that.has.length(1);
+			});
 
-			groups = dockerfile.getActionGroupsFromChangedFiles(['docs/api.md']);
-			expect(groups).to.have.length(0);
-		});
+			it('should return the longest chain of action groups for a stage', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-h']);
+				const stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'a',
+				]);
+				expect(stagedActionGroups).to.have.property('0');
+				expect(stagedActionGroups)
+					.to.have.property('1')
+					.that.has.length(2);
+			});
 
-		it('should detect action groups to trigger from directory copies', () => {
-			let dockerfileContent = [
-				'FROM baseimage',
-				'COPY src ./',
-				'RUN command1',
-				'COPY ./ src/',
-				'RUN command2',
-			].join('\n');
+			it('should not spuriously invalidate a stage', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-i']);
+				let stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles([
+					'a',
+				]);
+				expect(stagedActionGroups).to.have.property('0');
+				expect(stagedActionGroups).to.not.have.property('1');
+				expect(stagedActionGroups).to.have.property('2');
 
-			let dockerfile = new Dockerfile(dockerfileContent);
-			let groups = dockerfile.getActionGroupsFromChangedFiles(['src/test.ts']);
-			expect(groups).to.have.length(2);
+				stagedActionGroups = dockerfile.getActionGroupsFromChangedFiles(['c']);
+				expect(stagedActionGroups).to.have.property('1');
+				expect(stagedActionGroups).to.not.have.property('2');
+				expect(stagedActionGroups).to.have.property('3');
+			});
 
-			groups = dockerfile.getActionGroupsFromChangedFiles(['test.ts']);
-			expect(groups).to.have.length(1);
-
-			dockerfileContent = [
-				'FROM baseimage',
-				'COPY . ./',
-				'RUN command1',
-				'RUN command2',
-			].join('\n');
-
-			dockerfile = new Dockerfile(dockerfileContent);
-
-			groups = dockerfile.getActionGroupsFromChangedFiles(['test.ts']);
-			expect(groups).to.have.length(1);
-			expect(groups[0].commands).to.have.length(2);
+			it('should return an empty list when a stage does not depend on another', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-i']);
+				const stage = dockerfile.stages[2];
+				expect(stage.getActionGroupsForChangedStage(1)).to.have.length(0);
+			});
 		});
 	});
 
 	describe('Utilities', () => {
-		it('should remove dashed arguments', () => {
-			const args = ['--chown', 'root:root', 'a', 'b', 'c'];
-			// Cast to any here, as `removeDashedArgs` is private
-			expect((Dockerfile as any).removeDashedArgs(args)).to.deep.equal([
-				'a',
-				'b',
-				'c',
-			]);
-		});
-
 		it('should detect child paths', () => {
-			const isChild = (Dockerfile as any).isChildPath;
-
-			assert(isChild('/usr/src/app', '/usr/src/app/src'), 'assert 1');
-			assert(isChild('/usr/src/app/', '/usr/src/app/src/'), 'assert 2');
-			assert(isChild('/', '/a/'), 'assert 3');
-			assert(isChild('/', '/a/'), 'assert 4');
-			assert(isChild('/usr/src/', '/usr/src/app/src'), 'assert 5');
-			assert(isChild('/usr', '/usr/src/app/src'), 'assert 6');
-			assert(!isChild('/usr/src/a/test', '/usr/src/app/test'), 'assert 7');
-			assert(!isChild('/usr/src/a', '/usr/src/app/test'), 'assert 8');
-			assert(isChild('.', 'index.ts'), 'assert 9');
-			assert(isChild('.', 'src/index.ts'), 'assert 10');
-			assert(isChild('src', 'src/index.ts', 'assert 11'));
-			assert(!isChild('src', 'test/index.ts', 'assert 12'));
+			assert(isChildPath('/usr/src/app', '/usr/src/app/src'), 'assert 1');
+			assert(isChildPath('/usr/src/app/', '/usr/src/app/src/'), 'assert 2');
+			assert(isChildPath('/', '/a/'), 'assert 3');
+			assert(isChildPath('/', '/a/'), 'assert 4');
+			assert(isChildPath('/usr/src/', '/usr/src/app/src'), 'assert 5');
+			assert(isChildPath('/usr', '/usr/src/app/src'), 'assert 6');
+			assert(!isChildPath('/usr/src/a/test', '/usr/src/app/test'), 'assert 7');
+			assert(!isChildPath('/usr/src/a', '/usr/src/app/test'), 'assert 8');
+			assert(isChildPath('.', 'index.ts'), 'assert 9');
+			assert(isChildPath('.', 'src/index.ts'), 'assert 10');
+			assert(isChildPath('src', 'src/index.ts'), 'assert 11');
+			assert(!isChildPath('src', 'test/index.ts'), 'assert 12');
 		});
 	});
 });

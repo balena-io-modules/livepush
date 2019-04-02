@@ -1,0 +1,5 @@
+FROM base
+COPY a b
+COPY c d
+RUN run
+CMD cmd

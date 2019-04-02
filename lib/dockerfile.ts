@@ -1,5 +1,5 @@
 /*
-Copyright 2018 Balena Ltd
+Copyright 2019 Balena Ltd
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -12,267 +12,184 @@ limitations under the License.
 */
 import * as parser from 'docker-file-parser';
 import * as _ from 'lodash';
-import * as minimatch from 'minimatch';
 import * as path from 'path';
 
+import ActionGroup from './action-group';
 import { DockerfileParseError, UnsupportedError } from './errors';
+import Stage from './stage';
 
-/**
- * This interface represents a file which when
- * changed causes an option group to retrigger
- */
-export interface FileDependency {
-	/**
-	 * The path of the file on disk
-	 */
-	localPath: string;
-	/**
-	 * Where this file gets mapped to inside the container
-	 */
-	containerPath: string;
-	/**
-	 * Does the container path point to a directory or a file?
-	 */
-	destinationIsDirectory: boolean;
-	/**
-	 * Does the source path point to a directory or file?
-	 */
-	sourceIsDirectory: boolean;
+interface StagedActionGroups {
+	[stage: number]: ActionGroup[];
 }
 
-export type Command = string;
+export class Dockerfile {
+	public stages: Stage[] = [];
 
-/**
- * This interface represents a set of actions to be performed
- * in the same working directory on the container. They are
- * generated given the Dockerfile and a list of changed files.
- */
-export interface DockerfileActionGroup {
-	/**
-	 * A list of commands to run in order
-	 */
-	commands: Command[];
-	/**
-	 * A list of files which this group depends on.
-	 * What this means is that if any of the files in
-	 * this structure changes, every command in the `commands`
-	 * field should be re-ran
-	 */
-	fileDependencies: FileDependency[];
-	/**
-	 * The directory in the container which these commands should be
-	 * run in
-	 */
-	workDir: string;
-}
-
-class Dockerfile {
-	public actionGroups: DockerfileActionGroup[] = [];
-
-	public constructor(dockerfileContents: string) {
-		this.parse(dockerfileContents);
+	public constructor(dockerfileContent: string | Buffer) {
+		this.parse(dockerfileContent.toString());
 	}
 
-	private parse(dockerfileContents: string) {
-		const entries = parser.parse(dockerfileContents, {
+	public getActionGroupsFromChangedFiles(files: string[]): StagedActionGroups {
+		// go through stage by stage, detecting which stages would be affected by
+		// this file being changed
+		files = files.map(path.normalize);
+		const stagedGroups: StagedActionGroups = {};
+		for (const [idx, stage] of this.stages.entries()) {
+			const actionGroups = stage.getActionGroupsForChangedFiles(files);
+			if (actionGroups.length > 0) {
+				stagedGroups[idx] = actionGroups;
+			}
+		}
+
+		// Recursively detect changes in stages. We start with the stages
+		// which change as a direct result of a local copy. We then move
+		// onto stages which have become invalidated due to a change in
+		// a stage that they depend on. We then move onto stages which have
+		// been invalidated due to the stages invalidated by other stages,
+		// ad infinitum. We should probably add in infinite loop detection,
+		// but in general, to get to this point docker would have had to
+		// build the dockerfile anyway, so we can assume all is good.
+		const buildDependencyGraph = ([stageIdx, ...tail]: number[]): void => {
+			// Check all the stages for a dependency on the current stage
+			for (const stage of this.stages) {
+				if (stage.index === stageIdx) {
+					continue;
+				}
+				if (_.includes(stage.dependentOnStages, stageIdx)) {
+					// Get the action groups that this will invalidate
+					const invalidatedByStage = stage.getActionGroupsForChangedStage(
+						stageIdx,
+					);
+					// because an invalidated action group invalidates every step after it,
+					// we choose the longest chain to save for the stage
+					if (
+						stagedGroups[stage.index] == null ||
+						stagedGroups[stage.index].length < invalidatedByStage.length
+					) {
+						stagedGroups[stage.index] = invalidatedByStage;
+					}
+
+					// Push this stage onto the stack of values to detect
+					tail = tail.concat(stage.index);
+				}
+			}
+			if (tail.length === 0) {
+				return;
+			}
+			buildDependencyGraph(tail);
+		};
+
+		buildDependencyGraph(_.map(stagedGroups, (_v, k) => parseInt(k, 10)));
+
+		return stagedGroups;
+	}
+
+	private parse(dockerfileContent: string) {
+		const entries = parser.parse(dockerfileContent, {
 			includeComments: false,
 		});
 
-		let workDir = '/';
-		let commands: Command[] = [];
-		let lastCopy: FileDependency[] = [];
+		let currentStage: Stage | null = null;
+		let stageIdx = 0;
 
 		for (const entry of entries) {
 			switch (entry.name.toUpperCase()) {
-				case 'ADD':
-					// This isn't supported, as adding urls etc can really mess things up.
-					throw new UnsupportedError(
-						'Dockerfiles containing the ADD instruction are not supported. Please use COPY.',
-					);
-				case 'COPY':
-					// If there are any commands which have occured already, save them as an action
-					// group
-					if (commands.length > 0) {
-						this.actionGroups.push({
-							workDir,
-							commands,
-							fileDependencies: lastCopy,
-						});
-						commands = [];
-						lastCopy = Dockerfile.copyArgsToFileDeps(workDir, entry.args);
+				case 'FROM':
+					const args = entry.args as string;
+					const parts = args.split(' ');
+
+					if (parts.length === 1) {
+						currentStage = new Stage(stageIdx);
+					} else if (parts.length === 3 && parts[1].toUpperCase() === 'AS') {
+						currentStage = new Stage(stageIdx, parts[2]);
 					} else {
-						// If we have multiple copy commands in a row, gather them so that we can
-						// act on all of them
-						lastCopy = lastCopy.concat(
-							Dockerfile.copyArgsToFileDeps(workDir, entry.args),
+						throw new DockerfileParseError(
+							`Could not parse FROM command on line ${entry.lineno}`,
 						);
 					}
 
+					this.stages.push(currentStage);
+					stageIdx++;
 					break;
+				case 'COPY':
+					/* istanbul ignore next */
+					if (currentStage == null) {
+						throw new DockerfileParseError(
+							'COPY outside of stage! (currentStage is not set)',
+						);
+					}
+					/* istanbul ignore next */
+					if (!_.isArray(entry.args)) {
+						throw new DockerfileParseError(
+							`Non-array arguments passed to COPY on line ${entry.lineno}`,
+						);
+					}
+					// Detect if this is a copy from another stage, or from the local fs
+					const [flags, copyArgs] = Dockerfile.removeFlags(entry.args);
+					if ('from' in flags) {
+						// This is a stage copy
+						currentStage.addStageCopyStep(
+							copyArgs,
+							this.stageNameToIndex(flags.from),
+						);
+					} else {
+						// This is a local fs copy
+						currentStage.addLocalCopyStep(copyArgs);
+					}
+					break;
+				case 'ADD':
+					// This isn't supported, as adding urls etc could really mess things up
+					throw new UnsupportedError(
+						'Dockerfiles containing the ADD instruction are not supported. Please use COPY.',
+					);
 				case 'WORKDIR':
-					// Take every command we currently have, and save it as an action group,
-					// as encountering another working directory means that every command
-					// following must execute in a different action group
-					if (commands.length > 0) {
-						this.actionGroups.push({
-							workDir,
-							commands,
-							fileDependencies: lastCopy,
-						});
-						lastCopy = [];
+					/* istanbul ignore next */
+					if (currentStage == null) {
+						throw new DockerfileParseError(
+							'COPY outside of stage! (currentStage is not set)',
+						);
 					}
-					commands = [];
+					/* istanbul ignore next */
 					if (!_.isString(entry.args)) {
-						throw new DockerfileParseError('Non-string argument to WORKDIR');
+						throw new DockerfileParseError(
+							`Non-string argument passed to WORKDIR on line ${entry.lineno}`,
+						);
 					}
-					workDir = entry.args;
+					currentStage.addWorkdirStep(entry.args);
 					break;
 				case 'RUN':
-					// Add this to the current set of commands
-					commands.push(Dockerfile.processRunArgs(entry.args));
+					/* istanbul ignore next */
+					if (currentStage == null) {
+						throw new DockerfileParseError(
+							'COPY outside of stage! (currentStage is not set)',
+						);
+					}
+					currentStage.addCommandStep(Dockerfile.processRunArgs(entry.args));
 					break;
 			}
 		}
 
-		// Store any commands left over, or add another action
-		// group in case there's been a COPY before the CMD line
-		const last = _.last(this.actionGroups) || { fileDependencies: [] };
-		if (commands.length > 0 || last.fileDependencies !== lastCopy) {
-			this.actionGroups.push({
-				workDir,
-				commands,
-				fileDependencies: lastCopy,
-			});
-		}
-	}
-
-	// TODO: We can probably cache this value
-	/**
-	 * Get a list of action groups which should be re-executed if any of
-	 * the files passed to this function have changed.
-	 *
-	 * @param files A list of files whose contents have changed. The path
-	 * should be relative to the build context
-	 */
-	public getActionGroupsFromChangedFiles(
-		files: string[],
-	): DockerfileActionGroup[] {
-		let actionGroupIdx = 0;
-		for (const actionGroup of this.actionGroups) {
-			// FIXME: COPY src/ src/ won't work due to the fact that there isn't a glob on the end of
-			// the target - we can fix this by silenty converting src/ to src/*
-
-			// For every dependency, see if it matches the current action group
-			const matches = Dockerfile.fileMatchesForActionGroup(files, actionGroup);
-
-			// If any of the files have changed we need to return all
-			// action groups which follow, as they could depend on either
-			// one of the trigger files, or the output of a previous action
-			// group
-			if (matches.length > 0) {
-				return this.actionGroups.slice(actionGroupIdx);
-			}
-
-			++actionGroupIdx;
-		}
-
-		return [];
-	}
-
-	public static fileMatchesForActionGroup(
-		files: string[],
-		actionGroup: DockerfileActionGroup,
-	): string[] {
-		return _(actionGroup.fileDependencies)
-			.flatMap(({ localPath }) =>
-				files.filter(
-					f => minimatch(f, localPath) || Dockerfile.isChildPath(localPath, f),
-				),
-			)
-			.uniq()
-			.value();
-	}
-
-	/**
-	 * Get the specific file dependency in an action group which will then
-	 * be used to calculate where to add the file in the container
-	 *
-	 * Returns the FileDependency or null if not found
-	 *
-	 * @param file The file to check
-	 * @param actionGroup The action group which references the file
-	 */
-	public static getActionGroupFileDependency(
-		file: string,
-		actionGroup: DockerfileActionGroup,
-	): FileDependency | null {
-		for (const dep of actionGroup.fileDependencies) {
-			if (
-				minimatch(file, dep.localPath) ||
-				Dockerfile.isChildPath(dep.localPath, file)
-			) {
-				return dep;
-			}
-		}
-		return null;
-	}
-
-	private static copyArgsToFileDeps(
-		workDir: string,
-		copyArgs: string | string[] | { [key: string]: string },
-	): FileDependency[] {
-		if (!_.isArray(copyArgs)) {
-			throw new DockerfileParseError('Non-array arguments passed to COPY');
-		}
-
-		// Remove any flags
-		copyArgs = Dockerfile.removeDashedArgs(copyArgs);
-
-		if (copyArgs.length < 2) {
-			throw new DockerfileParseError(
-				'Incorrect argument count for COPY, minimum 2 required',
-			);
-		}
-
-		// The last entry into the array should be the destination
-		let dest = copyArgs.pop() as string;
-
-		// If the destination is already absolute, the workdir doesn't come into it,
-		// but a relative destination means relative to the working directory
-		let isDir = false;
-		if (!path.isAbsolute(dest)) {
-			dest = path.join(workDir, dest);
-
-			// This will happen for same directory copies
-			if (dest === workDir) {
-				isDir = true;
-			}
-		} else {
-			isDir = true;
-		}
-
-		return copyArgs.map(arg => {
-			const normalized = path.normalize(arg);
-			return {
-				localPath: normalized,
-				containerPath: dest,
-				destinationIsDirectory: isDir || Dockerfile.isDirectory(dest),
-				sourceIsDirectory: Dockerfile.isDirectory(normalized),
-			};
+		this.stages.forEach(stage => {
+			stage.finalize();
 		});
+
+		if (currentStage != null) {
+			currentStage.isLast = true;
+		}
 	}
 
-	private static isDirectory(p: string) {
-		const normalized = path.normalize(p);
-		return normalized === '.' || normalized === '..' || _.endsWith(p, path.sep);
-	}
-
-	private static isChildPath(parent: string, child: string): boolean {
-		// from: https://stackoverflow.com/a/45242825/4193583
-		const relative = path.relative(parent, child);
-		return (
-			!!relative && !relative.startsWith('..') && !path.isAbsolute(relative)
-		);
+	private stageNameToIndex(name: string): number {
+		const found = _.find(this.stages, { name });
+		if (found != null) {
+			return found.index;
+		}
+		// We must assume that the name given is actually an index, and return
+		// that
+		const idx = parseInt(name, 10);
+		if (isNaN(idx)) {
+			throw new DockerfileParseError(`Could not find stage with name: ${name}`);
+		}
+		return idx;
 	}
 
 	private static processRunArgs(
@@ -282,27 +199,35 @@ class Dockerfile {
 			return command;
 		}
 
-		if (_.isObject(command)) {
-			throw new DockerfileParseError(
-				'Object arguments not supported for RUN commands',
-			);
+		if (_.isArray(command)) {
+			return command.join(' ');
 		}
 
-		return (command as string[]).join(' ');
+		/* istanbul ignore next */
+		throw new DockerfileParseError(
+			'Object arguments not supported for RUN commands',
+		);
 	}
 
-	private static removeDashedArgs(command: string[]): string[] {
-		let wasDashedArg = false;
-		return _.reject(command, arg => {
-			if (wasDashedArg) {
-				wasDashedArg = false;
-				return true;
-			}
+	private static removeFlags(args: string[]): [Dictionary<string>, string[]] {
+		const [unparsedFlags, nonFlags] = _.partition(args, a =>
+			_.startsWith(a, '--'),
+		);
 
-			wasDashedArg = arg.startsWith('--');
-
-			return wasDashedArg;
-		});
+		return [
+			_(unparsedFlags)
+				.map(f => {
+					const parts = f.split('=').filter(str => str.length > 0);
+					if (parts.length < 2) {
+						/* istanbul ignore next */
+						throw new DockerfileParseError(`Could not parse flag: ${f}`);
+					}
+					return [_.trimStart(parts[0], '-'), parts.slice(1).join('=')];
+				})
+				.fromPairs()
+				.value(),
+			nonFlags,
+		];
 	}
 }
 
