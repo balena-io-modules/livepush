@@ -70,12 +70,7 @@ export function getActionGroupFileFilter(
 	actionGroup: ActionGroup,
 ): (file: string) => boolean {
 	return (file: string) => {
-		for (const copy of actionGroup.copies) {
-			if (copyMatchesFile(copy, file)) {
-				return true;
-			}
-		}
-		return false;
+		return _.some(actionGroup.copies, copy => copyMatchesFile(copy, file));
 	};
 }
 

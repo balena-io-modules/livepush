@@ -50,7 +50,7 @@ export class Stage {
 	) {}
 
 	public addLocalCopyStep(args: string[]) {
-		const lastActionGroup = _.last(this.actionGroups);
+		const lastActionGroup = _.last(this.actionGroups)!;
 
 		if (args.length < 2) {
 			throw new DockerfileParseError(
@@ -88,7 +88,7 @@ export class Stage {
 	}
 
 	public addStageCopyStep(args: string[], stageIdx: number) {
-		const lastActionGroup = _.last(this.actionGroups);
+		const lastActionGroup = _.last(this.actionGroups)!;
 
 		if (args.length < 2) {
 			throw new DockerfileParseError(
@@ -228,7 +228,7 @@ export class Stage {
 		args: [string, string, ...string[]],
 		actionGroup: ActionGroup,
 	): LocalCopy[] {
-		let dest = args.pop();
+		let dest = args.pop()!;
 		// If this is not an absolute path, it's given relative to the current
 		// workdir
 		if (!path.isAbsolute(dest)) {
