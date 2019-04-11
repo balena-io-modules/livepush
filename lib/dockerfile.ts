@@ -18,7 +18,7 @@ import ActionGroup from './action-group';
 import { DockerfileParseError, UnsupportedError } from './errors';
 import Stage from './stage';
 
-interface StagedActionGroups {
+export interface StagedActionGroups {
 	[stage: number]: ActionGroup[];
 }
 
