@@ -105,7 +105,7 @@ export class Stage {
 				);
 			}
 
-			lastActionGroup.copies.concat(
+			lastActionGroup.copies = lastActionGroup.copies.concat(
 				this.copyArgsToCopies(checkedArgs, lastActionGroup).map(copy => ({
 					sourceStage: stageIdx,
 					...copy,

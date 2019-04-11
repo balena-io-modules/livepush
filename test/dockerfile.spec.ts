@@ -262,6 +262,17 @@ describe('Dockerfile', () => {
 					.that.deep.equals([{ source: 'a', dest: '/usr/src/app/b' }]);
 			});
 
+			it('should correctly group multiple stage copies', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['multi-j']);
+				expect(dockerfile.stages).to.have.length(2);
+				expect(dockerfile.stages[1])
+					.to.have.property('actionGroups')
+					.that.has.length(1);
+				expect(dockerfile.stages[1].actionGroups[0])
+					.to.have.property('copies')
+					.that.has.length(2);
+			});
+
 			it('should throw when calling processRunArgs with an object', () => {
 				expect(() => (Dockerfile as any).processRunArgs({})).to.throw(
 					DockerfileParseError,
