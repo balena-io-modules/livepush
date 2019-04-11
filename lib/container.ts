@@ -41,7 +41,7 @@ interface LocalAddOperation {
 	toPath: string;
 }
 
-interface StageContainers {
+export interface StageContainers {
 	[stageIdx: number]: Container;
 }
 
