@@ -18,7 +18,7 @@
     "build:test": "npm run clean && tsc --project . && npm run test:copy",
     "test": "npm run prettify && npm run lint && npm run test:cov",
     "test:cov": "npm run build:test && nyc mocha build/test/*.spec.js",
-    "test:copy": "cp -r test/{contexts,dockerfiles} build/test/",
+    "test:copy": "cp -r test/contexts build/test/; cp -r test/dockerfiles build/test/",
     "test:fast": "TS_NODE_FILES=true npx mocha --require ts-node/register test/**/*.spec.ts",
     "test:watch": "TS_NODE_FILES=true npx mocha --require ts-node/register test/**/*.spec.ts --watch --watch-extensions ts"
   },
