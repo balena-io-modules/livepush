@@ -52,15 +52,37 @@ export function isChildPath(parent: string, child: string): boolean {
 	return !!relative && !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 
+function copyMatchesFile(copy: LocalCopy, file: string): boolean {
+	return minimatch(file, copy.source) || isChildPath(copy.source, file);
+}
+
 export function fileMatchesForActionGroup(
 	files: string[],
 	actionGroup: ActionGroup,
 ): string[] {
 	return _(actionGroup.copies)
-		.flatMap(({ source }) =>
-			files.filter(f => minimatch(f, source) || isChildPath(source, f)),
-		)
+		.flatMap(copy => files.filter(f => copyMatchesFile(copy, f)))
 		.uniq()
+		.value();
+}
+
+export function getActionGroupFileFilter(
+	actionGroup: ActionGroup,
+): (file: string) => boolean {
+	return (file: string) => {
+		return _.some(actionGroup.copies, copy => copyMatchesFile(copy, file));
+	};
+}
+
+export function getAffectedLocalCopies(
+	actionGroup: ActionGroup,
+	file: string,
+): Array<{ file: string; copy: LocalCopy }> {
+	return _(actionGroup.copies)
+		.filter(c => copyMatchesFile(c, file))
+		.map(copy => {
+			return { file, copy };
+		})
 		.value();
 }
 
