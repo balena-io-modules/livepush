@@ -1,4 +1,3 @@
-import * as Bluebird from 'bluebird';
 import * as Dockerode from 'dockerode';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
