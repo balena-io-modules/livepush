@@ -1,2 +1,2 @@
 --timeout 600000
-build/test/*.spec.js
+--require source-map-support/register

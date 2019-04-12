@@ -1,0 +1,4 @@
+FROM base
+COPY something here
+RUN test
+CMD cmd

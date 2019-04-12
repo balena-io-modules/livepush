@@ -1,18 +1,21 @@
 import 'mocha';
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 
 import * as Bluebird from 'bluebird';
 import * as Docker from 'dockerode';
 import * as _ from 'lodash';
 import { fs } from 'mz';
-import * as path from 'path';
+import * as Path from 'path';
 import * as tarFs from 'tar-fs';
 import * as tar from 'tar-stream';
 
-import Container, { FileUpdates } from '../lib/container';
+import Container from '../lib/container';
 import { streamToBuffer } from '../lib/util';
 
+import { Dockerfile } from '../lib';
+import { ContainerNotRunningError } from '../lib/errors';
 import docker from './docker';
 
 const image = 'alpine:3.1';
@@ -40,9 +43,9 @@ const getDirectoryFromContainer = async (
 	stream.pipe(extract);
 
 	return new Promise<FileData>((resolve, reject) => {
-		extract.on('entry', async (header, stream, next) => {
+		extract.on('entry', async (header, dataStream, next) => {
 			if (header.type === 'file') {
-				const data = (await streamToBuffer(stream)).toString();
+				const data = (await streamToBuffer(dataStream)).toString();
 
 				fileData[header.name] = {
 					header,
@@ -60,17 +63,19 @@ const getDirectoryFromContainer = async (
 
 const addFileToContainer = async (
 	containerId: string,
-	path: string,
 	filename: string,
 	content: string,
 ): Promise<void> => {
-	const container = docker.getContainer(containerId);
+	const command = Container.generateContainerCommand(
+		`printf '${content}' > ${filename}`,
+	);
+	const returnCode = await (Container.fromContainerId(
+		'',
+		docker,
+		containerId,
+	) as any).executeCommandDetached(command);
 
-	const pack = tar.pack();
-	pack.entry({ name: filename }, content);
-	pack.finalize();
-
-	await container.putArchive(pack, { path });
+	expect(returnCode).to.equal(0);
 };
 
 const readFile = _.memoize(fs.readFile);
@@ -94,6 +99,26 @@ const buildContext = async (context: string): Promise<string> => {
 	await container.start();
 
 	return container.id;
+};
+
+const createImageWithFile = async (filename: string, content: string) => {
+	const dockerContainer = await docker.createContainer({
+		Image: image,
+		Tty: true,
+		Cmd: ['/bin/sh'],
+	});
+	await dockerContainer.start();
+	const container = Container.fromContainerId('', docker, dockerContainer.id);
+
+	await addFileToContainer(container.containerId, filename, content);
+
+	const { Id } = await docker
+		.getContainer(dockerContainer.id)
+		.commit({ repo: 'livepush-test-image', tag: filename.replace(/\//g, '') });
+
+	await dockerContainer.remove({ force: true });
+
+	return Id;
 };
 
 describe('Containers', () => {
@@ -123,18 +148,26 @@ describe('Containers', () => {
 
 		describe('Container running detection', () => {
 			it('should correctly detect a running container', async () => {
-				const container = new Container('', '.', currentContainer.id, docker);
+				const container = Container.fromContainerId(
+					'',
+					docker,
+					currentContainer.id,
+				);
 				expect(await container.checkRunning()).to.equal(true);
 			});
 
 			it('should correctly detect a stopped container', async () => {
 				await currentContainer.stop({ force: true });
-				const container = new Container('', '.', currentContainer.id, docker);
+				const container = Container.fromContainerId(
+					'',
+					docker,
+					currentContainer.id,
+				);
 				expect(await container.checkRunning()).to.equal(false);
 			});
 		});
 
-		describe('File synchronisation', () => {
+		describe('Local file synchronisation', () => {
 			describe('File addition and updating', () => {
 				it('should add a file to a container', async () => {
 					const dockerfileContent = [
@@ -143,35 +176,28 @@ describe('Containers', () => {
 						'COPY a.test b.test',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileData = await readFile(path.join(context, 'a.test'), 'utf8');
-
-					const container = new Container(
-						dockerfileContent,
+					const context = Path.join(__dirname, 'contexts', 'a');
+					const fileData = await readFile(Path.join(context, 'a.test'), 'utf8');
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: [],
-						deleted: [],
-						added: ['a.test'],
-					});
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
-					const tasks = container.actionsNeeded(changedFiles);
-
-					expect(tasks).to.have.length(1);
-
-					await container.performActions(changedFiles, tasks);
+					await container.executeActionGroups(tasks[0], ['a.test'], [], {});
 					const files = await getDirectoryFromContainer(
-						container.containerId,
+						currentContainer.id,
 						'/tmp',
 					);
 
 					expect(files).to.have.property('tmp/b.test');
-
 					const file = files['tmp/b.test'];
 					expect(file)
 						.to.have.property('name')
@@ -192,33 +218,36 @@ describe('Containers', () => {
 						'COPY a.test b.test ./',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileA = await readFile(path.join(context, 'a.test'), 'utf8');
-					const fileB = await readFile(path.join(context, 'b.test'), 'utf8');
+					const context = Path.join(__dirname, 'contexts', 'a');
+					const fileA = await readFile(Path.join(context, 'a.test'), 'utf8');
+					const fileB = await readFile(Path.join(context, 'b.test'), 'utf8');
 
-					const container = new Container(
-						dockerfileContent,
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: ['a.test', 'b.test'],
-						deleted: [],
-						added: [],
-					});
+					const tasks = dockerfile.getActionGroupsFromChangedFiles([
+						'a.test',
+						'b.test',
+					]);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
-					const tasks = container.actionsNeeded(changedFiles);
-					expect(tasks).to.have.length(1);
-
-					await container.performActions(changedFiles, tasks);
+					await container.executeActionGroups(
+						tasks[0],
+						['a.test', 'b.test'],
+						[],
+						{},
+					);
 					const files = await getDirectoryFromContainer(
-						container.containerId,
+						currentContainer.id,
 						'/tmp',
 					);
-
 					expect(Object.keys(files)).to.have.length(2);
 					expect(files['tmp/a.test'].data).to.equal(fileA);
 					expect(files['tmp/b.test'].data).to.equal(fileB);
@@ -231,127 +260,29 @@ describe('Containers', () => {
 						'COPY a.test b.test',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileA = await readFile(path.join(context, 'a.test'), 'utf8');
-					const fileB = await readFile(path.join(context, 'b.test'), 'utf8');
+					const context = Path.join(__dirname, 'contexts', 'a');
+					const fileA = await readFile(Path.join(context, 'a.test'), 'utf8');
+					const fileB = await readFile(Path.join(context, 'b.test'), 'utf8');
 
-					await addFileToContainer(
-						currentContainer.id,
-						'/tmp',
-						'b.test',
-						fileB,
-					);
+					await addFileToContainer(currentContainer.id, '/tmp/b.test', fileB);
 
-					const container = new Container(
-						dockerfileContent,
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: ['a.test'],
-						deleted: [],
-						added: [],
-					});
-
-					const actions = container.actionsNeeded(changedFiles);
-					expect(actions).to.have.length(1);
-
-					await container.performActions(changedFiles, actions);
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+					await container.executeActionGroups(tasks[0], ['a.test'], [], {});
 
 					const files = await getDirectoryFromContainer(
-						container.containerId,
+						currentContainer.id,
 						'/tmp',
 					);
 					expect(files)
 						.to.have.property('tmp/b.test')
-						.that.has.property('data')
-						.that.equals(fileA);
-				});
-
-				it('should overwrite a present file', async () => {
-					const dockerfileContent = [
-						`FROM ${image}`,
-						'WORKDIR /tmp',
-						'COPY a.test b.test',
-						'CMD test',
-					].join('\n');
-
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileA = await readFile(path.join(context, 'a.test'), 'utf8');
-					const fileB = await readFile(path.join(context, 'b.test'), 'utf8');
-
-					await addFileToContainer(
-						currentContainer.id,
-						'/tmp',
-						'b.test',
-						fileB,
-					);
-
-					const container = new Container(
-						dockerfileContent,
-						context,
-						currentContainer.id,
-						docker,
-					);
-
-					const changedFiles = new FileUpdates({
-						updated: ['a.test'],
-						deleted: [],
-						added: [],
-					});
-
-					const actions = container.actionsNeeded(changedFiles);
-					expect(actions).to.have.length(1);
-
-					await container.performActions(changedFiles, actions);
-
-					const files = await getDirectoryFromContainer(
-						container.containerId,
-						'/tmp',
-					);
-					expect(files)
-						.to.have.property('tmp/b.test')
-						.that.has.property('data')
-						.that.equals(fileA);
-				});
-
-				it('should add a file to a absolute path', async () => {
-					const dockerfileContent = [
-						`FROM ${image}`,
-						'COPY a.test /tmp/',
-						'CMD test',
-					].join('\n');
-
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileA = await readFile(path.join(context, 'a.test'), 'utf8');
-
-					const container = new Container(
-						dockerfileContent,
-						context,
-						currentContainer.id,
-						docker,
-					);
-
-					const changedFiles = new FileUpdates({
-						updated: ['a.test'],
-						deleted: [],
-						added: [],
-					});
-
-					const actions = container.actionsNeeded(changedFiles);
-					expect(actions).to.have.length(1);
-
-					await container.performActions(changedFiles, actions);
-
-					const files = await getDirectoryFromContainer(
-						container.containerId,
-						'/tmp',
-					);
-					expect(files)
-						.to.have.property('tmp/a.test')
 						.that.has.property('data')
 						.that.equals(fileA);
 				});
@@ -362,31 +293,32 @@ describe('Containers', () => {
 						'COPY ./* /tmp/',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileA = await readFile(path.join(context, 'a.test'), 'utf8');
-					const fileB = await readFile(path.join(context, 'b.test'), 'utf8');
+					const context = Path.join(__dirname, 'contexts', 'a');
+					const fileA = await readFile(Path.join(context, 'a.test'), 'utf8');
+					const fileB = await readFile(Path.join(context, 'b.test'), 'utf8');
 
-					const container = new Container(
-						dockerfileContent,
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: ['a.test', 'b.test'],
-						deleted: [],
-						added: [],
-					});
+					const tasks = dockerfile.getActionGroupsFromChangedFiles([
+						'a.test',
+						'b.test',
+					]);
 
-					const actions = container.actionsNeeded(changedFiles);
-					expect(actions).to.have.length(1);
-
-					await container.performActions(changedFiles, actions);
+					await container.executeActionGroups(
+						tasks[0],
+						['a.test', 'b.test'],
+						[],
+						{},
+					);
 
 					const files = await getDirectoryFromContainer(
-						container.containerId,
+						currentContainer.id,
 						'/tmp',
 					);
 
@@ -401,30 +333,30 @@ describe('Containers', () => {
 				});
 
 				it('should correctly consider subdirectories when copying files', async () => {
-					const context = path.join(__dirname, 'contexts', 'b');
-
-					const container = new Container(
-						await readFile(path.join(context, 'Dockerfile'), {
+					const context = Path.join(__dirname, 'contexts', 'b');
+					const dockerfile = new Dockerfile(
+						await readFile(Path.join(context, 'Dockerfile'), {
 							encoding: 'utf8',
 						}),
-						context,
-						currentContainer.id,
-						docker,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: ['test/test.ts'],
-						deleted: [],
-						added: [],
-					});
+					const container = Container.fromContainerId(
+						context,
+						docker,
+						currentContainer.id,
+					);
 
-					const actions = container.actionsNeeded(changedFiles);
-					expect(actions).to.have.length(1);
+					const tasks = dockerfile.getActionGroupsFromChangedFiles([
+						'test/test.ts',
+					]);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
 					expect(
-						await (container as any).getOperations(
+						await (container as any).getLocalOperations(
 							['test/test.ts'],
-							actions[0],
+							tasks[0][0],
 						),
 					).to.deep.equal([
 						{
@@ -440,37 +372,37 @@ describe('Containers', () => {
 						'COPY a.test /tmp/',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
+					const context = Path.join(__dirname, 'contexts', 'a');
 
-					const context = path.join(__dirname, 'contexts', 'a');
-
-					const container = new Container(
-						dockerfileContent,
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: ['a.test'],
-						deleted: [],
-						added: [],
-					});
-
-					const actions = container.actionsNeeded(changedFiles);
-					expect(actions).to.have.length(1);
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
 					currentContainer.stop({ force: true }).then(() => {
 						return container
-							.performActions(changedFiles, actions)
+							.executeActionGroups(tasks[0], ['a.test'], [], {})
 							.then(() => {
 								done(new Error('Non-running container not detected'));
 							})
-							.catch(() => done());
+							.catch(e => {
+								if (!(e instanceof ContainerNotRunningError)) {
+									throw e;
+								}
+								done();
+							});
 					});
 				});
 			});
 
-			describe('File deletion', () => {
+			describe('File Deletion', () => {
 				it('should delete a file from a container', async () => {
 					const dockerfileContent = [
 						`FROM ${image}`,
@@ -478,16 +410,16 @@ describe('Containers', () => {
 						'COPY a.test ./',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileData = await readFile(path.join(context, 'a.test'), 'utf8');
+					const context = Path.join(__dirname, 'contexts', 'a');
+					const fileData = await readFile(Path.join(context, 'a.test'), 'utf8');
 
 					// Add a file into the container, check that it's there, and then delete it,
 					// ensuring it's not there any longer
 					await addFileToContainer(
 						currentContainer.id,
-						'/tmp',
-						'a.test',
+						'/tmp/a.test',
 						fileData,
 					);
 
@@ -500,31 +432,22 @@ describe('Containers', () => {
 						.that.has.property('data')
 						.that.equals(fileData);
 
-					const container = new Container(
-						dockerfileContent,
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: [],
-						deleted: ['a.test'],
-						added: [],
-					});
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
-					const tasks = container.actionsNeeded(changedFiles);
-					expect(tasks).to.have.length(1);
-
-					await container.performActions(changedFiles, tasks);
-					files = await getDirectoryFromContainer(
-						container.containerId,
-						'/tmp',
-					);
+					await container.executeActionGroups(tasks[0], [], ['a.test'], {});
+					files = await getDirectoryFromContainer(currentContainer.id, '/tmp');
 					// tslint:disable-next-line
 					expect(files).to.be.empty;
 				});
-
 				it('should delete a file when it has a different container path', async () => {
 					const dockerfileContent = [
 						`FROM ${image}`,
@@ -532,16 +455,16 @@ describe('Containers', () => {
 						'COPY a.test b.test',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileData = await readFile(path.join(context, 'a.test'), 'utf8');
+					const context = Path.join(__dirname, 'contexts', 'a');
+					const fileData = await readFile(Path.join(context, 'a.test'), 'utf8');
 
 					// Add a file into the container, check that it's there, and then delete it,
 					// ensuring it's not there any longer
 					await addFileToContainer(
 						currentContainer.id,
-						'/tmp',
-						'b.test',
+						'/tmp/b.test',
 						fileData,
 					);
 
@@ -554,27 +477,19 @@ describe('Containers', () => {
 						.that.has.property('data')
 						.that.equals(fileData);
 
-					const container = new Container(
-						dockerfileContent,
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: [],
-						deleted: ['a.test'],
-						added: [],
-					});
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
-					const tasks = container.actionsNeeded(changedFiles);
-					expect(tasks).to.have.length(1);
-
-					await container.performActions(changedFiles, tasks);
-					files = await getDirectoryFromContainer(
-						container.containerId,
-						'/tmp',
-					);
+					await container.executeActionGroups(tasks[0], [], ['a.test'], {});
+					files = await getDirectoryFromContainer(currentContainer.id, '/tmp');
 					// tslint:disable-next-line
 					expect(files).to.be.empty;
 				});
@@ -586,25 +501,21 @@ describe('Containers', () => {
 						'COPY a.test b.test',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-					const context = path.join(__dirname, 'contexts', 'a');
-					const container = new Container(
-						dockerfileContent,
+					const context = Path.join(__dirname, 'contexts', 'a');
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: [],
-						deleted: ['a.test'],
-						added: [],
-					});
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
-					const tasks = container.actionsNeeded(changedFiles);
-					expect(tasks).to.have.length(1);
-
-					return container.performActions(changedFiles, tasks);
+					return container.executeActionGroups(tasks[0], [], ['a.test'], {});
 				});
 
 				it('should delete multiple files', async () => {
@@ -614,45 +525,39 @@ describe('Containers', () => {
 						'COPY a.test b.test ./',
 						'CMD test',
 					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-					const context = path.join(__dirname, 'contexts', 'a');
-					const fileA = await readFile(path.join(context, 'a.test'), 'utf8');
-					const fileB = await readFile(path.join(context, 'b.test'), 'utf8');
+					const context = Path.join(__dirname, 'contexts', 'a');
+					const fileA = await readFile(Path.join(context, 'a.test'), 'utf8');
+					const fileB = await readFile(Path.join(context, 'b.test'), 'utf8');
 
 					// Add a file into the container, check that it's there, and then delete it,
 					// ensuring it's not there any longer
-					await addFileToContainer(
-						currentContainer.id,
-						'/tmp',
-						'a.test',
-						fileA,
-					);
-					await addFileToContainer(
-						currentContainer.id,
-						'/tmp',
-						'b.test',
-						fileB,
-					);
+					await addFileToContainer(currentContainer.id, '/tmp/a.test', fileA);
+					await addFileToContainer(currentContainer.id, '/tmp/b.test', fileB);
 
-					const container = new Container(
-						dockerfileContent,
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
 
-					const changedFiles = new FileUpdates({
-						updated: [],
-						deleted: ['a.test', 'b.test'],
-						added: [],
-					});
+					const tasks = dockerfile.getActionGroupsFromChangedFiles([
+						'a.test',
+						'b.test',
+					]);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
-					const tasks = container.actionsNeeded(changedFiles);
-					expect(tasks).to.have.length(1);
-
-					await container.performActions(changedFiles, tasks);
+					await container.executeActionGroups(
+						tasks[0],
+						[],
+						['a.test', 'b.test'],
+						{},
+					);
 					const files = await getDirectoryFromContainer(
-						container.containerId,
+						currentContainer.id,
 						'/tmp',
 					);
 					// tslint:disable-next-line
@@ -702,25 +607,22 @@ describe('Containers', () => {
 						'COPY a.test b.test',
 						'CMD test',
 					].join('\n');
-					const context = path.join(__dirname, 'contexts', 'a');
+					const dockerfile = new Dockerfile(dockerfileContent);
+					const context = Path.join(__dirname, 'contexts', 'a');
 
-					const container = new Container(
-						dockerfileContent,
+					const container = Container.fromContainerId(
 						context,
-						currentContainer.id,
 						docker,
+						currentContainer.id,
 					);
-					const changedFiles = new FileUpdates({
-						updated: [],
-						deleted: [],
-						added: ['a.test'],
-					});
 
-					const tasks = container.actionsNeeded(changedFiles);
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
 
-					expect(tasks).to.have.length(1);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
 
-					await container.performActions(changedFiles, tasks);
+					await container.executeActionGroups(tasks[0], ['a.test'], [], {});
 				});
 			});
 		});
@@ -804,117 +706,347 @@ describe('Containers', () => {
 				});
 			});
 		});
-	});
-	describe('E2E', () => {
-		it('should correctly handle directory copies', async () => {
-			const context = path.join(__dirname, 'contexts', 'dir-copy');
-			const dockerfileContent = await readFile(
-				path.join(context, 'Dockerfile'),
-				'utf8',
-			);
 
-			const containerId = await buildContext(context);
+		describe('Container <-> Container interaction', () => {
+			let imageId: string;
+			let baseContainer: Container;
+			beforeEach(async () => {
+				imageId = await createImageWithFile('/tmp/testfile', 'test-data');
+				baseContainer = await Container.fromImage('', docker, imageId);
+			});
+			afterEach(async () => {
+				await docker
+					.getContainer(baseContainer.containerId)
+					.remove({ force: true });
+				await docker.getImage(imageId).remove({ force: true });
+			});
 
-			const fileToChange = path.join(context, 'src', 'index.ts');
-			const cachedFile = await readFile(fileToChange, 'utf8');
-
-			try {
-				const container = new Container(
-					dockerfileContent,
-					context,
-					containerId,
-					docker,
-				);
-
-				const newData = `${cachedFile}\nconsole.log('test')`;
-				await fs.writeFile(fileToChange, newData);
-				const changedFiles = new FileUpdates({
-					updated: ['src/index.ts'],
-					deleted: [],
-					added: [],
-				});
-
-				const actions = container.actionsNeeded(changedFiles);
-				expect(actions).to.have.length(1);
-
-				expect(
-					await (container as any).getOperations(['src/index.ts'], actions[0]),
-				).to.deep.equal([
-					{
-						fromPath: 'src/index.ts',
-						toPath: '/usr/src/app/src/index.ts',
-					},
-				]);
-
-				await container.performActions(changedFiles, actions);
-
-				const files = await getDirectoryFromContainer(
-					container.containerId,
-					'/usr/src/app',
+			it('should copy a file from a previous stage', async () => {
+				let files = await getDirectoryFromContainer(
+					baseContainer.containerId,
+					'/tmp',
 				);
 
 				expect(files)
-					.to.have.property('app/src/index.ts')
+					.to.have.property('tmp/testfile')
 					.that.has.property('data')
-					.that.equals(newData);
-			} finally {
-				await fs.writeFile(fileToChange, cachedFile);
-			}
+					.that.equals('test-data');
+
+				const dockerfileContent = [
+					'FROM base AS base',
+					'COPY test /tmp/testfile',
+					'FROM base2',
+					'COPY --from=base /tmp/testfile /tmp/frombase',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+
+				const container = Container.fromContainerId(
+					'.',
+					docker,
+					currentContainer.id,
+				);
+
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['test']);
+				expect(tasks)
+					.to.have.property('0')
+					.that.has.length(1);
+				expect(tasks)
+					.to.have.property('1')
+					.that.has.length(1);
+				expect(tasks[1][0])
+					.to.have.property('dependentOnStage')
+					.that.equals(true);
+
+				await container.executeActionGroups(tasks[1], ['test'], [], {
+					0: baseContainer,
+				});
+
+				files = await getDirectoryFromContainer(container.containerId, '/tmp');
+				expect(files)
+					.to.have.have.property('tmp/frombase')
+					.that.has.property('data')
+					.that.equals('test-data');
+			});
+
+			it('should copy a directory from a previous stage', async () => {
+				await addFileToContainer(
+					baseContainer.containerId,
+					'/tmp/testfile2',
+					'second-test',
+				);
+				const dockerfileContent = [
+					'FROM base AS base',
+					'COPY testfile testfile2 /tmp/',
+					'FROM base2',
+					'COPY --from=base /tmp /tmp',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+
+				const container = Container.fromContainerId(
+					'',
+					docker,
+					currentContainer.id,
+				);
+				const tasks = dockerfile.getActionGroupsFromChangedFiles([
+					'testfile',
+					'testfile2',
+				]);
+				await container.executeActionGroups(
+					tasks[1],
+					['testfile', 'testfile2'],
+					[],
+					{
+						0: baseContainer,
+					},
+				);
+
+				const files = await getDirectoryFromContainer(
+					container.containerId,
+					'/tmp',
+				);
+				expect(files)
+					.to.have.property('tmp/testfile')
+					.that.has.property('data')
+					.that.equals('test-data');
+				expect(files)
+					.to.have.property('tmp/testfile2')
+					.that.has.property('data')
+					.that.equals('second-test');
+			});
+
+			it('should copy multiple files from a previous stage', async () => {
+				await addFileToContainer(
+					baseContainer.containerId,
+					'/tmp/testfile2',
+					'second-test',
+				);
+				const dockerfileContent = [
+					'FROM base AS base',
+					'COPY testfile testfile2 /tmp/',
+					'FROM base2',
+					'COPY --from=base /tmp/testfile /tmp/testfile',
+					'COPY --from=base /tmp/testfile2 /tmp/testfile2',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+
+				const container = Container.fromContainerId(
+					'',
+					docker,
+					currentContainer.id,
+				);
+				const tasks = dockerfile.getActionGroupsFromChangedFiles([
+					'testfile',
+					'testfile2',
+				]);
+				await container.executeActionGroups(
+					tasks[1],
+					['testfile', 'testfile2'],
+					[],
+					{
+						0: baseContainer,
+					},
+				);
+
+				const files = await getDirectoryFromContainer(
+					container.containerId,
+					'/tmp',
+				);
+				expect(files)
+					.to.have.property('tmp/testfile')
+					.that.has.property('data')
+					.that.equals('test-data');
+				expect(files)
+					.to.have.property('tmp/testfile2')
+					.that.has.property('data')
+					.that.equals('second-test');
+			});
+
+			it('should cascade copies from stages', async () => {
+				const dockerfileContent = [
+					'FROM base AS base',
+					'COPY testfile /tmp/',
+					'FROM base2',
+					'COPY --from=base /tmp/testfile /tmp/testfile2',
+					'FROM base3',
+					'COPY --from=1 /tmp/testfile2 /tmp/testfile3',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+
+				const base2Image = await createImageWithFile('/tmp/not-used', 'test');
+				const base2Container = await Container.fromImage(
+					'',
+					docker,
+					base2Image,
+				);
+
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['testfile']);
+				expect(tasks)
+					.to.have.property('0')
+					.that.has.length(1);
+				expect(tasks)
+					.to.have.property('1')
+					.that.has.length(1);
+				expect(tasks)
+					.to.have.property('2')
+					.that.has.length(1);
+
+				const container = Container.fromContainerId(
+					'',
+					docker,
+					currentContainer.id,
+				);
+
+				await base2Container.executeActionGroups(tasks[1], ['testfile'], [], {
+					0: baseContainer,
+				});
+				let files = await getDirectoryFromContainer(
+					base2Container.containerId,
+					'/tmp',
+				);
+				expect(files)
+					.to.have.property('tmp/testfile2')
+					.that.has.property('data')
+					.that.equals('test-data');
+				await container.executeActionGroups(tasks[2], ['testfile'], [], {
+					1: base2Container,
+				});
+
+				files = await getDirectoryFromContainer(container.containerId, '/tmp');
+				expect(files)
+					.to.have.property('tmp/testfile3')
+					.that.has.property('data')
+					.that.equals('test-data');
+			});
 		});
 
-		it('should correctly handle non-directory copies', async () => {
-			const context = path.join(__dirname, 'contexts', 'no-dir-copy');
-			const dockerfileContent = await readFile(
-				path.join(context, 'Dockerfile'),
-				'utf8',
-			);
+		describe('Command execution', () => {
+			it('should run commands in action groups', async () => {
+				const dockerfileContent = [
+					'FROM base',
+					'WORKDIR /usr/src/app',
+					'COPY a.test b.test',
+					'RUN printf test > /tmp/testfile',
+					'CMD test',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
 
-			const containerId = await buildContext(context);
-			const fileToChange = path.join(context, 'index.ts');
-			const cachedFile = await readFile(fileToChange, 'utf8');
-
-			try {
-				const container = new Container(
-					dockerfileContent,
+				const context = Path.join(__dirname, 'contexts', 'a');
+				const container = Container.fromContainerId(
 					context,
-					containerId,
 					docker,
+					currentContainer.id,
 				);
 
-				const newData = `${cachedFile}\nconsole.log('test')`;
-				await fs.writeFile(fileToChange, newData);
-				const changedFiles = new FileUpdates({
-					updated: ['index.ts'],
-					deleted: [],
-					added: [],
-				});
-
-				const actions = container.actionsNeeded(changedFiles);
-				expect(actions).to.have.length(1);
-
-				expect(
-					await (container as any).getOperations(['index.ts'], actions[0]),
-				).to.deep.equal([
-					{
-						fromPath: 'index.ts',
-						toPath: '/usr/src/app/index.ts',
-					},
-				]);
-
-				await container.performActions(changedFiles, actions);
-
-				const files = await getDirectoryFromContainer(
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+				await container.executeActionGroups(tasks[0], ['a.test'], [], {});
+				let files = await getDirectoryFromContainer(
 					container.containerId,
 					'/usr/src/app',
 				);
-
 				expect(files)
-					.to.have.property('app/index.ts')
+					.itself.have.property('app/b.test')
 					.that.has.property('data')
-					.that.equals(newData);
-			} finally {
-				await fs.writeFile(fileToChange, cachedFile);
-			}
+					.that.equals('test-data\n');
+
+				files = await getDirectoryFromContainer(container.containerId, '/tmp');
+				expect(files)
+					.to.have.property('tmp/testfile')
+					.that.has.property('data')
+					.that.equals('test');
+			});
+
+			it('should run commands in the order that they are defined', async () => {
+				const dockerfileContent = [
+					'FROM base',
+					'WORKDIR /usr/src/app',
+					'COPY a.test b.test',
+					'RUN printf test > /tmp/testfile',
+					'RUN rm -f /tmp/testfile',
+					'CMD test',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+
+				const context = Path.join(__dirname, 'contexts', 'a');
+				const container = Container.fromContainerId(
+					context,
+					docker,
+					currentContainer.id,
+				);
+
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+				await container.executeActionGroups(tasks[0], ['a.test'], [], {});
+				const files = await getDirectoryFromContainer(
+					container.containerId,
+					'/tmp',
+				);
+				expect(files).to.not.have.property('tmp/testfile');
+			});
+
+			it('should not run commands after an execution failure', async () => {
+				const dockerfileContent = [
+					'FROM base',
+					'WORKDIR /usr/src/app',
+					'COPY a.test b.test',
+					'RUN command-doesnt-exist',
+					'RUN printf test > /tmp/testfile',
+					'CMD test',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+
+				const context = Path.join(__dirname, 'contexts', 'a');
+				const container = Container.fromContainerId(
+					context,
+					docker,
+					currentContainer.id,
+				);
+
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+				await container.executeActionGroups(tasks[0], ['a.test'], [], {});
+			});
+
+			it('should provide execution events', async () => {
+				const dockerfileContent = [
+					'FROM base',
+					'WORKDIR /usr/src/app',
+					'COPY a.test b.test',
+					'RUN printf test > /tmp/testfile',
+					'RUN echo "hello"',
+					'CMD test',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+
+				const context = Path.join(__dirname, 'contexts', 'a');
+				const container = Container.fromContainerId(
+					context,
+					docker,
+					currentContainer.id,
+				);
+
+				const exitCode = sinon.stub();
+				const output = sinon.stub();
+				const execute = sinon.stub();
+				const restart = sinon.stub();
+
+				container.on('commandReturn', a => exitCode(a));
+				container.on('commandOutput', a => output(a));
+				container.on('commandExecute', a => execute(a));
+				// Why is this necessary??
+				// @ts-ignore
+				container.on('containerRestart', a => restart(a));
+
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+				await container.executeActionGroups(tasks[0], ['a.test'], [], {});
+
+				expect(exitCode.calledTwice).to.equal(true);
+				expect(exitCode.calledWith(0)).to.equal(true);
+				expect(output.calledOnce).to.equal(true);
+				expect(restart.calledOnce).to.equal(true);
+				expect(execute.calledTwice).to.equal(true);
+				expect(execute.calledWith('printf test > /tmp/testfile')).to.equal(
+					true,
+				);
+				expect(execute.calledWith('echo "hello"')).to.equal(true);
+			});
 		});
 	});
 });
