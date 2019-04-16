@@ -16,6 +16,7 @@ import { streamToBuffer } from '../lib/util';
 
 import { Dockerfile } from '../lib';
 import { ContainerNotRunningError } from '../lib/errors';
+import { resolveFileDestination } from '../lib/stage-copy';
 import docker from './docker';
 
 const image = 'alpine:3.1';
@@ -1047,6 +1048,26 @@ describe('Containers', () => {
 				);
 				expect(execute.calledWith('echo "hello"')).to.equal(true);
 			});
+		});
+	});
+
+	describe('Utilities', () => {
+		it('should correctly generate destination paths when copying directories', () => {
+			expect(
+				resolveFileDestination('/', '/usr/src/app/', '/temp.txt'),
+			).to.equal('/usr/src/app/temp.txt');
+
+			expect(
+				resolveFileDestination('/usr/src/app', '/', 'app/index.js'),
+			).to.equal('/index.js');
+
+			expect(
+				resolveFileDestination(
+					'/usr/src/app/',
+					'/usr/src/app/build',
+					'app/index.js',
+				),
+			).to.equal('/usr/src/app/build/index.js');
 		});
 	});
 });

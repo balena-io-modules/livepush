@@ -46,22 +46,18 @@ async function copyDirToStage(
 		extract.on(
 			'entry',
 			async (headers: tar.Headers, stream: Readable, next: () => void) => {
-				let pathName = headers.name;
-				if (path.isAbsolute(copy.source)) {
-					pathName = `/${pathName}`;
-				}
-				const toAppend = path.relative(copy.source, pathName);
-
-				pack.entry(
-					{ ...headers, name: path.join(copy.dest, toAppend) },
-					await streamToBuffer(stream),
-					err => {
-						if (err) {
-							reject(err);
-						}
-						next();
-					},
+				const name = resolveFileDestination(
+					copy.source,
+					copy.dest,
+					headers.name,
 				);
+
+				pack.entry({ ...headers, name }, await streamToBuffer(stream), err => {
+					if (err) {
+						reject(err);
+					}
+					next();
+				});
 
 				extract.on('finish', () => {
 					pack.finalize();
@@ -117,4 +113,19 @@ async function copyFileToStage(
 
 	// Now we can send this file to the container
 	await dest.addFilesToContainer(pack, '/');
+}
+
+export function resolveFileDestination(
+	source: string,
+	dest: string,
+	pathInTar: string,
+) {
+	const sourceParts = source.split('/').filter(p => p !== '');
+	let pathParts = pathInTar.split('/').filter(p => p !== '');
+
+	if (sourceParts[sourceParts.length - 1] === pathParts[0]) {
+		pathParts = pathParts.slice(1);
+	}
+
+	return path.join(dest, pathParts.join('/'));
 }
