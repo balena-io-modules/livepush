@@ -77,13 +77,19 @@ async function copyFileToStage(
 ) {
 	// Rather than fetch an entire directory from docker,
 	// we instead just read the file directly
+	// TODO: Check return code
 	const context = await source.executeCommand(
 		Container.generateContainerCommand(`cat ${copy.source}`),
+	);
+	const permissionContext = await source.executeCommand(
+		Container.generateContainerCommand(`stat -c %a ${copy.source}`),
 	);
 
 	// Build the buffer for the file
 	const buf = await streamToBuffer(context.stdout);
-	// TODO: Check return code
+	const permissions = (await streamToBuffer(permissionContext.stdout))
+		.toString()
+		.trim();
 
 	// Now generate a tar stream with the correct structure
 	let destination = (await dest.pathIsDirectory(copy.dest))
@@ -100,13 +106,17 @@ async function copyFileToStage(
 
 	const pack = tar.pack();
 	await new Promise((resolve, reject) => {
-		pack.entry({ name: destination }, buf, (err?: Error) => {
-			if (err) {
-				reject(err);
-			} else {
-				resolve();
-			}
-		});
+		pack.entry(
+			{ name: destination, mode: parseInt(permissions, 8) },
+			buf,
+			(err?: Error) => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve();
+				}
+			},
+		);
 	});
 	pack.finalize();
 
