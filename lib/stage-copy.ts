@@ -58,13 +58,12 @@ async function copyDirToStage(
 					}
 					next();
 				});
-
-				extract.on('finish', () => {
-					pack.finalize();
-					resolve();
-				});
 			},
 		);
+		extract.on('finish', () => {
+			pack.finalize();
+			resolve();
+		});
 		sourceStream.pipe(extract);
 	});
 
