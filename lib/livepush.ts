@@ -87,6 +87,15 @@ export class Livepush extends (EventEmitter as {
 		}
 	}
 
+	public async cleanupIntermediateContainers() {
+		const stages = _.keys(this.containers);
+		for (const stage of stages) {
+			const stageIdx = parseInt(stage, 10);
+			const container = this.containers[stageIdx];
+			await container.cleanup();
+		}
+	}
+
 	private assignEventHandlers() {
 		_.each(this.containers, (container, stageIdxStr) => {
 			const stageIdx = parseInt(stageIdxStr, 10);

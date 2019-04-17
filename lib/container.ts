@@ -211,6 +211,10 @@ export class Container extends (EventEmitter as {
 		});
 	}
 
+	public async cleanup() {
+		await this.docker.getContainer(this.containerId).remove({ force: true });
+	}
+
 	private async runActionGroupCommand(command: string): Promise<number> {
 		this.emit('commandExecute', command);
 		const dockerCommand = Container.generateContainerCommand(command);
