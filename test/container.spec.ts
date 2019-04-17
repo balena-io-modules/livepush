@@ -401,6 +401,47 @@ describe('Containers', () => {
 							});
 					});
 				});
+
+				it('should correctly copy directories', async () => {
+					const context = Path.join(__dirname, 'contexts', 'dir-copy');
+					const dockerfileContent = await readFile(
+						Path.join(context, 'Dockerfile'),
+					);
+					const dockerfile = new Dockerfile(dockerfileContent);
+					const container = Container.fromContainerId(
+						context,
+						docker,
+						currentContainer.id,
+					);
+					// @ts-ignore
+					await container.executeCommandDetached([
+						'/bin/sh',
+						'-c',
+						'mkdir -p /usr/src/app',
+					]);
+
+					const tasks = dockerfile.getActionGroupsFromChangedFiles([
+						'src/index.ts',
+					]);
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
+
+					await container.executeActionGroups(
+						tasks[0],
+						['src/index.ts'],
+						[],
+						{},
+					);
+					const files = await getDirectoryFromContainer(
+						currentContainer.id,
+						'/usr/src/app',
+					);
+					expect(files)
+						.to.have.property('app/index.ts')
+						.that.has.property('data')
+						.that.equals(`console.log('hello');\n`);
+				});
 			});
 
 			describe('File Deletion', () => {

@@ -15,6 +15,7 @@ import * as Bluebird from 'bluebird';
 import * as Docker from 'dockerode';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
+import { fs } from 'mz';
 import * as Path from 'path';
 import * as escape from 'shell-escape';
 import * as shell from 'shell-quote';
@@ -302,9 +303,24 @@ export class Container extends (EventEmitter as {
 						Path.join(this.buildContext, file),
 					);
 
-					const strippedPath = sourceIsDirectory ? Path.basename(file) : file;
+					// This workflow is a little confusing, because
+					// Dockefile copies are fairly forgiving in what
+					// they allow. What we do is try to detect when
+					// we're copying a file, and that is not the same
+					// as the source. We also check that we are not
+					// using a glob, by checking the existence of the source
+					const realSource = Path.join(this.buildContext, copy.source);
+					let filepath = file;
+					if (
+						!sourceIsDirectory &&
+						copy.source !== filepath &&
+						(await fs.exists(realSource))
+					) {
+						filepath = Path.relative(copy.source, filepath);
+					}
+
 					const toPath = destinationIsDirectory
-						? Path.join(copy.dest, strippedPath)
+						? Path.join(copy.dest, filepath)
 						: copy.dest;
 
 					return {

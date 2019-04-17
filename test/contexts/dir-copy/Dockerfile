@@ -2,7 +2,7 @@ FROM alpine
 
 WORKDIR /usr/src/app
 
-COPY ./src ./src
+COPY ./src .
 
 RUN hostname
 
