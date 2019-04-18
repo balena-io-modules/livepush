@@ -46,18 +46,38 @@ async function copyDirToStage(
 		extract.on(
 			'entry',
 			async (headers: tar.Headers, stream: Readable, next: () => void) => {
-				const name = resolveFileDestination(
-					copy.source,
-					copy.dest,
-					headers.name,
-				);
+				// We filter anything that's not a file or
+				// directory. This is because there's things which
+				// just dont make sense, like block devices. There's
+				// also things like links which can break the build
+				// because they either are linking to something that
+				// appears later in the tar stream, or they link to
+				// something that isn't being copied. The correct
+				// way to handle this would be to ignore broken
+				// links on the docker side, but the docker
+				// implementation doesn't do this, so we'll have to
+				// filter until we come up with a more elegant solution.
+				if (headers.type !== 'file' && headers.type !== 'directory') {
+					stream.on('end', next);
+					stream.resume();
+				} else {
+					const name = resolveFileDestination(
+						copy.source,
+						copy.dest,
+						headers.name,
+					);
 
-				pack.entry({ ...headers, name }, await streamToBuffer(stream), err => {
-					if (err) {
-						reject(err);
-					}
-					next();
-				});
+					pack.entry(
+						{ ...headers, name },
+						await streamToBuffer(stream),
+						err => {
+							if (err) {
+								reject(err);
+							}
+							next();
+						},
+					);
+				}
 			},
 		);
 		extract.on('finish', () => {
