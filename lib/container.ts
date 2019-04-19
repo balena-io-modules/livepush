@@ -381,9 +381,19 @@ export class Container extends (EventEmitter as {
 		tarStream: Stream.Readable,
 		destination: string,
 	): Promise<void> {
-		await this.docker
-			.getContainer(this.containerId)
-			.putArchive(tarStream, { path: destination });
+		await new Promise((resolve, reject) => {
+			// We use the callback interface here, as the
+			// dockerode promise interface somehow loses any
+			// errors which occur
+			this.docker
+				.getContainer(this.containerId)
+				.putArchive(tarStream, { path: destination }, err => {
+					if (err) {
+						return reject(err);
+					}
+					resolve();
+				});
+		});
 	}
 }
 
