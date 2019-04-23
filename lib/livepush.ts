@@ -89,6 +89,10 @@ export class Livepush extends (EventEmitter as {
 
 	public async cleanupIntermediateContainers() {
 		const stages = _.keys(this.containers);
+		// Dont remove the last container, as this is the
+		// application container and we still want that to
+		// run
+		stages.pop();
 		for (const stage of stages) {
 			const stageIdx = parseInt(stage, 10);
 			const container = this.containers[stageIdx];
