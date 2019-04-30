@@ -10,7 +10,7 @@ import { InvalidArgumentError } from './errors';
 export interface LivepushEvents {
 	commandExecute: { stageIdx: number; command: string };
 	commandOutput: { stageIdx: number; output: CommandOutput };
-	commandReturn: { stageIdx: number; returnCode: number };
+	commandReturn: { stageIdx: number; returnCode: number; command: string };
 	containerRestart: { containerId: string };
 }
 
@@ -109,8 +109,8 @@ export class Livepush extends (EventEmitter as {
 			container.on('commandOutput', output =>
 				this.emit('commandOutput', { stageIdx, output }),
 			);
-			container.on('commandReturn', returnCode =>
-				this.emit('commandReturn', { stageIdx, returnCode }),
+			container.on('commandReturn', returnInfo =>
+				this.emit('commandReturn', { stageIdx, ...returnInfo }),
 			);
 		});
 

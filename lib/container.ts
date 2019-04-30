@@ -59,7 +59,7 @@ export interface CommandOutput {
 export interface ContainerEvents {
 	commandExecute: string;
 	commandOutput: CommandOutput;
-	commandReturn: (returnCode: number) => void;
+	commandReturn: { returnCode: number; command: string };
 	containerRestart: void;
 }
 
@@ -224,7 +224,7 @@ export class Container extends (EventEmitter as {
 			switch (ev.type) {
 				case CommandExecutionArtifactType.EXIT_CODE:
 					exitCode = ev.code;
-					this.emit('commandReturn', exitCode);
+					this.emit('commandReturn', { returnCode: exitCode, command });
 					break;
 				case CommandExecutionArtifactType.STDERR_DATA:
 				case CommandExecutionArtifactType.STDOUT_DATA:
