@@ -1080,7 +1080,12 @@ describe('Containers', () => {
 				await container.executeActionGroups(tasks[0], ['a.test'], [], {});
 
 				expect(exitCode.calledTwice).to.equal(true);
-				expect(exitCode.calledWith(0)).to.equal(true);
+				expect(
+					exitCode.calledWith({
+						returnCode: 0,
+						command: 'printf test > /tmp/testfile',
+					}),
+				).to.equal(true);
 				expect(output.calledOnce).to.equal(true);
 				expect(restart.calledOnce).to.equal(true);
 				expect(execute.calledTwice).to.equal(true);
