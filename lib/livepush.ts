@@ -5,7 +5,7 @@ import StrictEventEmitter from 'strict-event-emitter-types';
 
 import Container, { CommandOutput, StageContainers } from './container';
 import Dockerfile from './dockerfile';
-import { InvalidArgumentError } from './errors';
+import { InvalidArgumentError, LivepushAlreadyRunningError } from './errors';
 
 export interface LivepushEvents {
 	commandExecute: { stageIdx: number; command: string };
@@ -22,6 +22,9 @@ export class Livepush extends (EventEmitter as {
 	// tslint:disable-next-line
 	new (): ContainerEventEmitter;
 }) {
+	// Is a livepush process currently running?
+	private livepushRunning = false;
+
 	private constructor(
 		public docker: Dockerode,
 		public dockerfile: Dockerfile,
@@ -73,6 +76,10 @@ export class Livepush extends (EventEmitter as {
 			addedOrUpdated.concat(deleted),
 		);
 
+		if (this.livepushRunning) {
+			throw new LivepushAlreadyRunningError();
+		}
+		this.livepushRunning = true;
 		const keys = _.keys(tasks).sort();
 		for (const stageIdxStr of keys) {
 			const stageIdx = parseInt(stageIdxStr, 10);
@@ -85,6 +92,7 @@ export class Livepush extends (EventEmitter as {
 				this.containers,
 			);
 		}
+		this.livepushRunning = false;
 	}
 
 	public async cleanupIntermediateContainers() {

@@ -1,13 +1,21 @@
 import Container from './container';
 import Dockerfile from './dockerfile';
-import { DockerfileParseError, RuntimeError, UnsupportedError } from './errors';
+import {
+	DockerfileParseError,
+	InvalidArgumentError,
+	LivepushAlreadyRunningError,
+	RuntimeError,
+	UnsupportedError,
+} from './errors';
 import Livepush from './livepush';
 
 export {
 	Container,
 	Dockerfile,
 	DockerfileParseError,
+	InvalidArgumentError,
 	Livepush,
+	LivepushAlreadyRunningError,
 	RuntimeError,
 	UnsupportedError,
 };
