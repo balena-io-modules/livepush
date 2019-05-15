@@ -77,7 +77,10 @@ export async function addFileToTarPack(
 ): Promise<void> {
 	const stat = await fs.stat(path);
 
-	pack.entry({ name: destination, size: stat.size }, await fs.readFile(path));
+	pack.entry(
+		{ name: destination, size: stat.size, mode: stat.mode },
+		await fs.readFile(path),
+	);
 }
 
 export enum CommandExecutionArtifactType {
