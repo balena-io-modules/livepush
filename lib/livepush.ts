@@ -80,19 +80,22 @@ export class Livepush extends (EventEmitter as {
 			throw new LivepushAlreadyRunningError();
 		}
 		this.livepushRunning = true;
-		const keys = _.keys(tasks).sort();
-		for (const stageIdxStr of keys) {
-			const stageIdx = parseInt(stageIdxStr, 10);
-			const stageTasks = tasks[stageIdx];
+		try {
+			const keys = _.keys(tasks).sort();
+			for (const stageIdxStr of keys) {
+				const stageIdx = parseInt(stageIdxStr, 10);
+				const stageTasks = tasks[stageIdx];
 
-			await this.containers[stageIdx].executeActionGroups(
-				stageTasks,
-				addedOrUpdated,
-				deleted,
-				this.containers,
-			);
+				await this.containers[stageIdx].executeActionGroups(
+					stageTasks,
+					addedOrUpdated,
+					deleted,
+					this.containers,
+				);
+			}
+		} finally {
+			this.livepushRunning = false;
 		}
-		this.livepushRunning = false;
 	}
 
 	public async cleanupIntermediateContainers() {
