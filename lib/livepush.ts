@@ -1,3 +1,4 @@
+import { delay } from 'bluebird';
 import * as Dockerode from 'dockerode';
 import { EventEmitter } from 'events';
 import * as _ from 'lodash';
@@ -5,13 +6,14 @@ import StrictEventEmitter from 'strict-event-emitter-types';
 
 import Container, { CommandOutput, StageContainers } from './container';
 import Dockerfile from './dockerfile';
-import { InvalidArgumentError, LivepushAlreadyRunningError } from './errors';
+import { InvalidArgumentError } from './errors';
 
 export interface LivepushEvents {
 	commandExecute: { stageIdx: number; command: string };
 	commandOutput: { stageIdx: number; output: CommandOutput };
 	commandReturn: { stageIdx: number; returnCode: number; command: string };
 	containerRestart: { containerId: string };
+	cancel: void;
 }
 
 type ContainerEventEmitter = StrictEventEmitter<EventEmitter, LivepushEvents>;
@@ -24,6 +26,7 @@ export class Livepush extends (EventEmitter as {
 }) {
 	// Is a livepush process currently running?
 	private livepushRunning = false;
+	private cancelRun = false;
 
 	private constructor(
 		public docker: Dockerode,
@@ -77,7 +80,13 @@ export class Livepush extends (EventEmitter as {
 		);
 
 		if (this.livepushRunning) {
-			throw new LivepushAlreadyRunningError();
+			await this.cancel();
+			while (this.cancelRun) {
+				await delay(1000);
+			}
+			_.each(this.containers, container => {
+				container.markCancelled(false);
+			});
 		}
 		this.livepushRunning = true;
 		try {
@@ -85,6 +94,10 @@ export class Livepush extends (EventEmitter as {
 			for (const stageIdxStr of keys) {
 				const stageIdx = parseInt(stageIdxStr, 10);
 				const stageTasks = tasks[stageIdx];
+
+				if (this.cancelRun) {
+					break;
+				}
 
 				await this.containers[stageIdx].executeActionGroups(
 					stageTasks,
@@ -95,6 +108,7 @@ export class Livepush extends (EventEmitter as {
 			}
 		} finally {
 			this.livepushRunning = false;
+			this.cancelRun = false;
 		}
 	}
 
@@ -109,6 +123,14 @@ export class Livepush extends (EventEmitter as {
 			const container = this.containers[stageIdx];
 			await container.cleanup();
 		}
+	}
+
+	public async cancel() {
+		this.emit('cancel');
+		this.cancelRun = true;
+		_.each(this.containers, container => {
+			container.markCancelled(true);
+		});
 	}
 
 	private assignEventHandlers() {

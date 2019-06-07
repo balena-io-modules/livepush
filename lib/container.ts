@@ -71,6 +71,8 @@ export class Container extends (EventEmitter as {
 	// tslint:disable-next-line
 	new (): ContainerEventEmitter;
 }) {
+	private cancelled: boolean = false;
+
 	private constructor(
 		private buildContext: string,
 		private docker: Docker,
@@ -163,6 +165,9 @@ export class Container extends (EventEmitter as {
 			// After adding the necessary files, we then execute the commands in the
 			// order that they appear in the dockerfile
 			for (const command of actionGroup.commands) {
+				if (this.cancelled) {
+					return;
+				}
 				const returnCode = await this.runActionGroupCommand(command);
 				if (returnCode !== 0) {
 					// Dont continue if a command failed
@@ -215,6 +220,10 @@ export class Container extends (EventEmitter as {
 		await this.docker.getContainer(this.containerId).remove({ force: true });
 	}
 
+	public markCancelled(cancelled: boolean) {
+		this.cancelled = cancelled;
+	}
+
 	private async runActionGroupCommand(command: string): Promise<number> {
 		this.emit('commandExecute', command);
 		const dockerCommand = Container.generateContainerCommand(command);
@@ -246,9 +255,7 @@ export class Container extends (EventEmitter as {
 		const container = containers[stage.stageDependency];
 		if (container == null) {
 			throw new InternalInconsistencyError(
-				`Attempt to copy from stage without a container given. StageIdx: ${
-					stage.stageDependency
-				}`,
+				`Attempt to copy from stage without a container given. StageIdx: ${stage.stageDependency}`,
 			);
 		}
 
