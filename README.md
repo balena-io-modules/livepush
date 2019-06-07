@@ -31,7 +31,9 @@ COPY src/ src/
 CMD node src/app.js
 ```
 
-A change made to the package.json, for example `npm install --save express` will invalidate every step from `COPY package.json .` and cause a rebuild from there.
+A change made to the package.json, for example
+`npm install --save express` will invalidate every step from
+`COPY package.json .` and cause a rebuild from there.
 
 That would copy the new package.json into the container, run
 `npm install`, and move to the next stop. At the next step,
@@ -77,13 +79,16 @@ Provide the livepush instance with a list of files relative
 to the build context, and livepush will perfom any tasks
 necessary to get this code running remotely.
 
+If a livepush process is already running, this will be
+cancelled, and the new one will start when the last executed
+command finishes (docker does not provide a way to cancel a
+command which is started by the api).
+
 Can throw:
 
 - `ContainerNotRunningError` - This is thrown when livepush
   tries to perform an action on any container that is no
   longer running.
-- `LivepushAlreadyRunningError` - This error is thrown
-  when a livepush process is still running, when another is requested.
 
 #### cleanupIntermediateContainers
 
@@ -132,10 +137,13 @@ following argument: `{ stageIdx: number; returnCode: number; command: string }`
 When a container is restarted this event is emitted with
 argument `{ contianerId: string }`.
 
+##### `cancel`
+
+This event is emitted when an ongoing livepush process is cancelled.
+
 ## Planned additions
 
 - Add the ability to not restart the container after a
   livepush has occurred. This would be useful in combination
   with source watching programs such as `node-supervisor`.
-- Add the ability to cancel an ongoing livepush.
 - Add events for a livepush process starting and ending
