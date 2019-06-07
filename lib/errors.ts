@@ -6,4 +6,3 @@ export class ContainerNotRunningError extends TypedError {}
 export class InternalInconsistencyError extends TypedError {}
 export class RuntimeError extends TypedError {}
 export class InvalidArgumentError extends TypedError {}
-export class LivepushAlreadyRunningError extends TypedError {}

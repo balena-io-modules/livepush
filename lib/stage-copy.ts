@@ -27,9 +27,7 @@ async function copyDirToStage(
 ) {
 	if (!(await dest.pathIsDirectory(copy.dest))) {
 		throw new InternalInconsistencyError(
-			`Attempt to copy directory into non-directory destination from stage copy: destination: ${
-				copy.dest
-			}`,
+			`Attempt to copy directory into non-directory destination from stage copy: destination: ${copy.dest}`,
 		);
 	}
 

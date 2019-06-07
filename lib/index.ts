@@ -4,7 +4,6 @@ import {
 	ContainerNotRunningError,
 	DockerfileParseError,
 	InvalidArgumentError,
-	LivepushAlreadyRunningError,
 	RuntimeError,
 	UnsupportedError,
 } from './errors';
@@ -17,7 +16,6 @@ export {
 	DockerfileParseError,
 	InvalidArgumentError,
 	Livepush,
-	LivepushAlreadyRunningError,
 	RuntimeError,
 	UnsupportedError,
 };
