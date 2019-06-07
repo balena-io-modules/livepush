@@ -59,10 +59,11 @@ export class Livepush extends (EventEmitter as {
 		for (const [idx, stageImage] of stageImages.entries()) {
 			containers[idx] = await Container.fromImage(context, docker, stageImage);
 		}
-		containers[dockerfile.stages.length - 1] = Container.fromContainerId(
+		containers[dockerfile.stages.length - 1] = await Container.fromContainerId(
 			context,
 			docker,
 			containerId,
+			dockerfile.stages[dockerfile.stages.length - 1].buildArgs,
 		);
 
 		return new Livepush(docker, dockerfile, containers);

@@ -166,6 +166,24 @@ export class Dockerfile {
 					}
 					currentStage.addCommandStep(Dockerfile.processRunArgs(entry.args));
 					break;
+				case 'ARG':
+					if (currentStage == null) {
+						// This isn't an error, but the ARG doesn't do
+						// anything, so we just continue
+						continue;
+					}
+					if (!_.isString(entry.args)) {
+						if (_.isArray(entry.args) && entry.args.length === 1) {
+							entry.args = entry.args[0];
+						} else {
+							throw new DockerfileParseError(
+								`Expected a single argument to ARG command on line ${
+									entry.lineno
+								}`,
+							);
+						}
+					}
+					currentStage.addBuildArg(entry.args as string);
 			}
 		}
 

@@ -6,121 +6,23 @@ import * as sinon from 'sinon';
 import * as Bluebird from 'bluebird';
 import * as Docker from 'dockerode';
 import * as _ from 'lodash';
-import { fs } from 'mz';
 import * as Path from 'path';
-import * as tarFs from 'tar-fs';
-import * as tar from 'tar-stream';
 
 import Container from '../lib/container';
-import { streamToBuffer } from '../lib/util';
-
 import { Dockerfile } from '../lib';
 import { ContainerNotRunningError } from '../lib/errors';
 import { resolveFileDestination } from '../lib/stage-copy';
 import docker from './docker';
+import {
+	readFile,
+	getDirectoryFromContainer,
+	addFileToContainer,
+	createImageWithFile,
+} from './test-utils';
 
 const image = 'alpine:3.1';
 
 let currentContainer: Docker.Container;
-
-interface FileData {
-	[name: string]: {
-		header: tar.Headers;
-		name: string;
-		data: string;
-	};
-}
-
-const getDirectoryFromContainer = async (
-	containerId: string,
-	path: string,
-): Promise<FileData> => {
-	const container = docker.getContainer(containerId);
-	const stream = await container.getArchive({ path });
-
-	const fileData = {};
-	const extract = tar.extract();
-
-	stream.pipe(extract);
-
-	return new Promise<FileData>((resolve, reject) => {
-		extract.on('entry', async (header, dataStream, next) => {
-			if (header.type === 'file') {
-				const data = (await streamToBuffer(dataStream)).toString();
-
-				fileData[header.name] = {
-					header,
-					name: header.name,
-					data,
-				};
-			}
-
-			next();
-		});
-		extract.on('error', reject);
-		extract.on('finish', () => resolve(fileData));
-	});
-};
-
-const addFileToContainer = async (
-	containerId: string,
-	filename: string,
-	content: string,
-): Promise<void> => {
-	const command = Container.generateContainerCommand(
-		`printf '${content}' > ${filename}`,
-	);
-	const returnCode = await (Container.fromContainerId(
-		'',
-		docker,
-		containerId,
-	) as any).executeCommandDetached(command);
-
-	expect(returnCode).to.equal(0);
-};
-
-const readFile = _.memoize(fs.readFile);
-
-const buildContext = async (context: string): Promise<string> => {
-	console.log('Building context:', context);
-	const buildStream = await docker.buildImage(tarFs.pack(context), {
-		t: 'livepush-test-image:latest',
-	});
-
-	await new Promise((resolve, reject) => {
-		buildStream.on('end', resolve);
-		buildStream.on('error', reject);
-		buildStream.resume();
-	});
-
-	const container = await docker.createContainer({
-		Image: 'livepush-test-image',
-		Tty: true,
-	});
-	await container.start();
-
-	return container.id;
-};
-
-const createImageWithFile = async (filename: string, content: string) => {
-	const dockerContainer = await docker.createContainer({
-		Image: image,
-		Tty: true,
-		Cmd: ['/bin/sh'],
-	});
-	await dockerContainer.start();
-	const container = Container.fromContainerId('', docker, dockerContainer.id);
-
-	await addFileToContainer(container.containerId, filename, content);
-
-	const { Id } = await docker
-		.getContainer(dockerContainer.id)
-		.commit({ repo: 'livepush-test-image', tag: filename.replace(/\//g, '') });
-
-	await dockerContainer.remove({ force: true });
-
-	return Id;
-};
 
 describe('Containers', () => {
 	describe('Interaction', () => {
@@ -149,7 +51,7 @@ describe('Containers', () => {
 
 		describe('Container running detection', () => {
 			it('should correctly detect a running container', async () => {
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					'',
 					docker,
 					currentContainer.id,
@@ -159,7 +61,7 @@ describe('Containers', () => {
 
 			it('should correctly detect a stopped container', async () => {
 				await currentContainer.stop({ force: true });
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					'',
 					docker,
 					currentContainer.id,
@@ -181,7 +83,7 @@ describe('Containers', () => {
 
 					const context = Path.join(__dirname, 'contexts', 'a');
 					const fileData = await readFile(Path.join(context, 'a.test'), 'utf8');
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -225,7 +127,7 @@ describe('Containers', () => {
 					const fileA = await readFile(Path.join(context, 'a.test'), 'utf8');
 					const fileB = await readFile(Path.join(context, 'b.test'), 'utf8');
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -269,7 +171,7 @@ describe('Containers', () => {
 
 					await addFileToContainer(currentContainer.id, '/tmp/b.test', fileB);
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -300,7 +202,7 @@ describe('Containers', () => {
 					const fileA = await readFile(Path.join(context, 'a.test'), 'utf8');
 					const fileB = await readFile(Path.join(context, 'b.test'), 'utf8');
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -341,7 +243,7 @@ describe('Containers', () => {
 						}),
 					);
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -367,7 +269,7 @@ describe('Containers', () => {
 					]);
 				});
 
-				it('should throw an error when the container is not running', done => {
+				it('should throw an error when the container is not running', async done => {
 					const dockerfileContent = [
 						`FROM ${image}`,
 						'COPY a.test /tmp/',
@@ -376,7 +278,7 @@ describe('Containers', () => {
 					const dockerfile = new Dockerfile(dockerfileContent);
 					const context = Path.join(__dirname, 'contexts', 'a');
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -408,7 +310,7 @@ describe('Containers', () => {
 						Path.join(context, 'Dockerfile'),
 					);
 					const dockerfile = new Dockerfile(dockerfileContent);
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -474,7 +376,7 @@ describe('Containers', () => {
 						.that.has.property('data')
 						.that.equals(fileData);
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -519,7 +421,7 @@ describe('Containers', () => {
 						.that.has.property('data')
 						.that.equals(fileData);
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -536,7 +438,7 @@ describe('Containers', () => {
 					expect(files).to.be.empty;
 				});
 
-				it('should not throw when a file does not exist', () => {
+				it('should not throw when a file does not exist', async () => {
 					const dockerfileContent = [
 						`FROM ${image}`,
 						'WORKDIR /tmp',
@@ -546,7 +448,7 @@ describe('Containers', () => {
 					const dockerfile = new Dockerfile(dockerfileContent);
 
 					const context = Path.join(__dirname, 'contexts', 'a');
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -578,7 +480,7 @@ describe('Containers', () => {
 					await addFileToContainer(currentContainer.id, '/tmp/a.test', fileA);
 					await addFileToContainer(currentContainer.id, '/tmp/b.test', fileB);
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -652,7 +554,7 @@ describe('Containers', () => {
 					const dockerfile = new Dockerfile(dockerfileContent);
 					const context = Path.join(__dirname, 'contexts', 'a');
 
-					const container = Container.fromContainerId(
+					const container = await Container.fromContainerId(
 						context,
 						docker,
 						currentContainer.id,
@@ -753,7 +655,11 @@ describe('Containers', () => {
 			let imageId: string;
 			let baseContainer: Container;
 			beforeEach(async () => {
-				imageId = await createImageWithFile('/tmp/testfile', 'test-data');
+				imageId = await createImageWithFile(
+					image,
+					'/tmp/testfile',
+					'test-data',
+				);
 				baseContainer = await Container.fromImage('', docker, imageId);
 			});
 			afterEach(async () => {
@@ -782,7 +688,7 @@ describe('Containers', () => {
 				].join('\n');
 				const dockerfile = new Dockerfile(dockerfileContent);
 
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					'.',
 					docker,
 					currentContainer.id,
@@ -824,7 +730,7 @@ describe('Containers', () => {
 				].join('\n');
 				const dockerfile = new Dockerfile(dockerfileContent);
 
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					'',
 					docker,
 					currentContainer.id,
@@ -871,7 +777,7 @@ describe('Containers', () => {
 				].join('\n');
 				const dockerfile = new Dockerfile(dockerfileContent);
 
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					'',
 					docker,
 					currentContainer.id,
@@ -914,7 +820,11 @@ describe('Containers', () => {
 				].join('\n');
 				const dockerfile = new Dockerfile(dockerfileContent);
 
-				const base2Image = await createImageWithFile('/tmp/not-used', 'test');
+				const base2Image = await createImageWithFile(
+					image,
+					'/tmp/not-used',
+					'test',
+				);
 				const base2Container = await Container.fromImage(
 					'',
 					docker,
@@ -932,7 +842,7 @@ describe('Containers', () => {
 					.to.have.property('2')
 					.that.has.length(1);
 
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					'',
 					docker,
 					currentContainer.id,
@@ -973,7 +883,7 @@ describe('Containers', () => {
 				const dockerfile = new Dockerfile(dockerfileContent);
 
 				const context = Path.join(__dirname, 'contexts', 'a');
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					context,
 					docker,
 					currentContainer.id,
@@ -1009,7 +919,7 @@ describe('Containers', () => {
 				const dockerfile = new Dockerfile(dockerfileContent);
 
 				const context = Path.join(__dirname, 'contexts', 'a');
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					context,
 					docker,
 					currentContainer.id,
@@ -1036,7 +946,7 @@ describe('Containers', () => {
 				const dockerfile = new Dockerfile(dockerfileContent);
 
 				const context = Path.join(__dirname, 'contexts', 'a');
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					context,
 					docker,
 					currentContainer.id,
@@ -1058,7 +968,7 @@ describe('Containers', () => {
 				const dockerfile = new Dockerfile(dockerfileContent);
 
 				const context = Path.join(__dirname, 'contexts', 'a');
-				const container = Container.fromContainerId(
+				const container = await Container.fromContainerId(
 					context,
 					docker,
 					currentContainer.id,

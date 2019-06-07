@@ -36,6 +36,7 @@ import {
 	hostPathIsDirectory,
 	waitForCommandCompletion,
 } from './util';
+import { getBuildArgsForContainer } from './build-args';
 
 interface LocalAddOperation {
 	fromPath: string;
@@ -79,11 +80,21 @@ export class Container extends (EventEmitter as {
 		super();
 	}
 
-	public static fromContainerId(
+	public static async fromContainerId(
 		buildContext: string,
 		docker: Docker,
 		containerId: string,
-	): Container {
+		buildArgs?: string[],
+	): Promise<Container> {
+		// If there are build argument names passed to this
+		// stage, work out what there values are by looking at
+		// the image used to create this container
+		if (buildArgs != null) {
+			console.log(
+				await getBuildArgsForContainer(docker, containerId, buildArgs),
+			);
+		}
+
 		return new Container(buildContext, docker, containerId);
 	}
 

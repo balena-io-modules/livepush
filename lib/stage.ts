@@ -33,6 +33,7 @@ export class Stage {
 			workdir: '/',
 		},
 	];
+	public buildArgs: string[] = [];
 
 	/*
 		This var is used to detect whether we create a new action group,
@@ -158,6 +159,10 @@ export class Stage {
 		this.lastWorkdir = workdir;
 		this.ungroupedCommands = [];
 		this.lastStepWasCopy = false;
+	}
+
+	public addBuildArg(name: string) {
+		this.buildArgs.push(name);
 	}
 
 	public finalize() {
