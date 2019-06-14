@@ -171,7 +171,7 @@ export class Container extends (EventEmitter as {
 				const returnCode = await this.runActionGroupCommand(command);
 				if (returnCode !== 0) {
 					// Dont continue if a command failed
-					break;
+					return;
 				}
 			}
 		}
