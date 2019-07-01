@@ -85,6 +85,14 @@ export class Dockerfile {
 	}
 
 	private parse(dockerfileContent: string) {
+		// Until https://github.com/joyent/node-docker-file-parser/issues/8
+		// is fixed, we first remove all comments from the
+		// dockerfile
+		dockerfileContent = dockerfileContent
+			.split(/\r?\n/)
+			.filter(line => !line.trimLeft().startsWith('#'))
+			.join('\n');
+
 		const entries = parser.parse(dockerfileContent, {
 			includeComments: false,
 		});
