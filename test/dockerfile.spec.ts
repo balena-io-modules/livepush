@@ -132,6 +132,16 @@ describe('Dockerfile', () => {
 				]);
 			});
 
+			it('should handle comments within commands', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-r']);
+				expect(dockerfile.stages).to.have.length(1);
+				expect(dockerfile.stages[0].actionGroups).to.have.length(1);
+				const ag = dockerfile.stages[0].actionGroups[0];
+
+				expect(ag.commands).to.have.length(1);
+				expect(ag.commands[0]).to.equal(`echo 'hello' && echo ' world'`);
+			});
+
 			it('should handle workdir commands', () => {
 				const dockerfile = new Dockerfile(dockerfileContent['single-e']);
 				expect(dockerfile.stages).to.have.length(1);
