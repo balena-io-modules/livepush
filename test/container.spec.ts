@@ -1095,6 +1095,72 @@ describe('Containers', () => {
 				expect(execute.calledWith('echo "hello"')).to.equal(true);
 			});
 		});
+
+		describe('Build arguments', () => {
+			it('should correctly apply build arguments to commands', async () => {
+				const dockerfileContent = [
+					'FROM base',
+					'WORKDIR /usr/src/app',
+					'COPY a.test b',
+					'RUN echo $TEST > /tmp/testfile',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+
+				const context = Path.join(__dirname, 'contexts', 'a');
+				const container = Container.fromContainerId(
+					context,
+					docker,
+					currentContainer.id,
+				);
+
+				container.setBuildArguments({
+					TEST: 'VALUE',
+				});
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+				await container.executeActionGroups(tasks[0], ['a.test'], [], []);
+
+				const files = await getDirectoryFromContainer(
+					container.containerId,
+					'/tmp',
+				);
+				expect(files)
+					.to.have.property('tmp/testfile')
+					.that.has.property('data')
+					.that.equals('VALUE\n');
+			});
+		});
+
+		it('should correctly apply build arguments which contain spaces', async () => {
+			const dockerfileContent = [
+				'FROM base',
+				'WORKDIR /usr/src/app',
+				'COPY a.test b',
+				'RUN echo $TEST > /tmp/testfile',
+			].join('\n');
+			const dockerfile = new Dockerfile(dockerfileContent);
+
+			const context = Path.join(__dirname, 'contexts', 'a');
+			const container = Container.fromContainerId(
+				context,
+				docker,
+				currentContainer.id,
+			);
+
+			container.setBuildArguments({
+				TEST: 'VALUE WITH SPACES',
+			});
+			const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+			await container.executeActionGroups(tasks[0], ['a.test'], [], []);
+
+			const files = await getDirectoryFromContainer(
+				container.containerId,
+				'/tmp',
+			);
+			expect(files)
+				.to.have.property('tmp/testfile')
+				.that.has.property('data')
+				.that.equals('VALUE WITH SPACES\n');
+		});
 	});
 
 	describe('Utilities', () => {

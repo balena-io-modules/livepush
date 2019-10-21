@@ -133,6 +133,12 @@ export class Livepush extends (EventEmitter as {
 		});
 	}
 
+	public setBuildArgs(buildArgs: Dictionary<string>): void {
+		_.each(this.containers, container =>
+			container.setBuildArguments(buildArgs),
+		);
+	}
+
 	private assignEventHandlers() {
 		_.each(this.containers, (container, stageIdxStr) => {
 			const stageIdx = parseInt(stageIdxStr, 10);
