@@ -72,6 +72,7 @@ export class Container extends (EventEmitter as {
 	new (): ContainerEventEmitter;
 }) {
 	private cancelled: boolean = false;
+	private buildArguments: Dictionary<string> = {};
 
 	private constructor(
 		private buildContext: string,
@@ -188,6 +189,7 @@ export class Container extends (EventEmitter as {
 	): Promise<CommandExecutionContext> {
 		const exec = await this.docker.getContainer(this.containerId).exec({
 			Cmd: command,
+			Env: this.getBuildArgsForDockerApi(),
 			AttachStderr: true,
 			AttachStdout: true,
 		});
@@ -222,6 +224,10 @@ export class Container extends (EventEmitter as {
 
 	public markCancelled(cancelled: boolean) {
 		this.cancelled = cancelled;
+	}
+
+	public setBuildArguments(buildArgs: Dictionary<string>): void {
+		this.buildArguments = buildArgs;
 	}
 
 	private async runActionGroupCommand(command: string): Promise<number> {
@@ -401,6 +407,10 @@ export class Container extends (EventEmitter as {
 					resolve();
 				});
 		});
+	}
+
+	private getBuildArgsForDockerApi(): string[] {
+		return _.map(this.buildArguments, (v, k) => `${k}=${v}`);
 	}
 }
 
