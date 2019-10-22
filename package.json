@@ -1,6 +1,6 @@
 {
   "name": "livepush",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Update your containers live!",
   "main": "build/index.js",
   "types": "build/index.d.ts",
