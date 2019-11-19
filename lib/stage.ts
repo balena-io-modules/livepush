@@ -232,11 +232,11 @@ export class Stage {
 		// If this is not an absolute path, it's given relative to the current
 		// workdir
 		if (!path.isAbsolute(dest)) {
-			dest = path.join(actionGroup.workdir, dest);
+			dest = path.posix.join(actionGroup.workdir, dest);
 		}
 
 		return args.map(source => {
-			const normalized = path.normalize(source);
+			const normalized = path.posix.normalize(source);
 			return {
 				source: normalized,
 				dest,
