@@ -147,6 +147,7 @@ export function resolveFileDestination(
 	dest: string,
 	pathInTar: string,
 ) {
+	// TODO: source.split probably needs to use native separator (i.e. path.sep), but needs investigating.
 	const sourceParts = source.split('/').filter(p => p !== '');
 	let pathParts = pathInTar.split('/').filter(p => p !== '');
 

@@ -311,7 +311,6 @@ export class Container extends (EventEmitter as {
 					// check the string itself. Any path ending with / is quite clearly
 					// a directory, and it means that we can avoid making another docker
 					// call
-					// TODO: Think about how this is affected when using windows
 					const destinationIsDirectory =
 						_.endsWith(copy.dest, '/') ||
 						(await this.pathIsDirectory(copy.dest));
@@ -327,17 +326,19 @@ export class Container extends (EventEmitter as {
 					// as the source. We also check that we are not
 					// using a glob, by checking the existence of the source
 					const realSource = Path.join(this.buildContext, copy.source);
-					let filepath = file;
+					// Convert to posix style path for windows only (to preserve any escape chars in non-windows paths)
+					let filepath =
+						process.platform === 'win32' ? file.replace(/\\/g, '/') : file;
 					if (
 						!sourceIsDirectory &&
 						copy.source !== filepath &&
 						(await fs.exists(realSource))
 					) {
-						filepath = Path.relative(copy.source, filepath);
+						filepath = Path.posix.relative(copy.source, filepath);
 					}
 
 					const toPath = destinationIsDirectory
-						? Path.join(copy.dest, filepath)
+						? Path.posix.join(copy.dest, filepath)
 						: copy.dest;
 
 					return {
