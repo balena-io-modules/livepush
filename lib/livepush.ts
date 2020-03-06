@@ -112,6 +112,16 @@ export class Livepush extends (EventEmitter as {
 		}
 	}
 
+	// Given some fs changes in the context, do we need to
+	// perform a livepush?
+	public livepushNeeded(addedOrUpdated: string[], deleted: string[]): boolean {
+		return !_.isEmpty(
+			this.dockerfile.getActionGroupsFromChangedFiles(
+				addedOrUpdated.concat(deleted),
+			),
+		);
+	}
+
 	public async cleanupIntermediateContainers() {
 		const stages = _.keys(this.containers);
 		// Dont remove the last container, as this is the
