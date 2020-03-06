@@ -75,9 +75,10 @@ export class Livepush extends (EventEmitter as {
 		addedOrUpdated: string[],
 		deleted: string[],
 	): Promise<void> {
-		const tasks = this.dockerfile.getActionGroupsFromChangedFiles(
-			addedOrUpdated.concat(deleted),
-		);
+		const tasks = this.dockerfile.getActionGroupsFromChangedFiles([
+			...addedOrUpdated,
+			...deleted,
+		]);
 
 		if (this.livepushRunning) {
 			await this.cancel();
@@ -110,6 +111,17 @@ export class Livepush extends (EventEmitter as {
 			this.livepushRunning = false;
 			this.cancelRun = false;
 		}
+	}
+
+	// Given some fs changes in the context, do we need to
+	// perform a livepush?
+	public livepushNeeded(addedOrUpdated: string[], deleted: string[]): boolean {
+		return !_.isEmpty(
+			this.dockerfile.getActionGroupsFromChangedFiles([
+				...addedOrUpdated,
+				...deleted,
+			]),
+		);
 	}
 
 	public async cleanupIntermediateContainers() {
