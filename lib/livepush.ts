@@ -75,9 +75,10 @@ export class Livepush extends (EventEmitter as {
 		addedOrUpdated: string[],
 		deleted: string[],
 	): Promise<void> {
-		const tasks = this.dockerfile.getActionGroupsFromChangedFiles(
-			addedOrUpdated.concat(deleted),
-		);
+		const tasks = this.dockerfile.getActionGroupsFromChangedFiles([
+			...addedOrUpdated,
+			...deleted,
+		]);
 
 		if (this.livepushRunning) {
 			await this.cancel();
@@ -116,9 +117,10 @@ export class Livepush extends (EventEmitter as {
 	// perform a livepush?
 	public livepushNeeded(addedOrUpdated: string[], deleted: string[]): boolean {
 		return !_.isEmpty(
-			this.dockerfile.getActionGroupsFromChangedFiles(
-				addedOrUpdated.concat(deleted),
-			),
+			this.dockerfile.getActionGroupsFromChangedFiles([
+				...addedOrUpdated,
+				...deleted,
+			]),
 		);
 	}
 
