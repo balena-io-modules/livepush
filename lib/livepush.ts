@@ -22,6 +22,13 @@ export interface LivepushConstructOpts {
 	containerId: string;
 	stageImages: string[];
 	docker: Dockerode;
+
+	// Should we skip restarting the container once a
+	// succesful livepush has finished?
+	// This is useful for situations where a "watch mode"
+	// program runner is being used, for example
+	// node-supervisor
+	skipContainerRestart?: boolean;
 }
 
 type ContainerEventEmitter = StrictEventEmitter<EventEmitter, LivepushEvents>;
@@ -66,12 +73,17 @@ export class Livepush extends (EventEmitter as {
 				opts.context,
 				opts.docker,
 				stageImage,
+				// Always skip restarts for intermediate containers
+				{ skipRestart: true },
 			);
 		}
 		containers[dockerfile.stages.length - 1] = Container.fromContainerId(
 			opts.context,
 			opts.docker,
 			opts.containerId,
+			{
+				skipRestart: opts.skipContainerRestart ?? false,
+			},
 		);
 
 		return new Livepush(dockerfile, containers);
@@ -111,7 +123,6 @@ export class Livepush extends (EventEmitter as {
 					addedOrUpdated,
 					deleted,
 					this.containers,
-					keys.length - 1 === stageIdx,
 				);
 			}
 		} finally {

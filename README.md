@@ -56,6 +56,8 @@ static init({
 	containerId: string,
 	stageImages: string[],
 	docker: Dockerode,
+
+	skipContainerRestart?: boolean,
 }): Promise<Livepush>
 ```
 
@@ -65,6 +67,11 @@ container ID, the IDs of the images created as part of a
 possible multistage build (`[]` for single stage
 dockerfiles) and an initialised handle to a docker daemon
 via [Dockerode](https://github.com/apocas/dockerode).
+
+The `skipContainerRestart` flag will stop livepush from
+restarting the running container after performing a
+livepush. This can be useful when the main process has some
+kind of watch mode, for example `webpack-dev-server`, or `node-supervisor`.
 
 #### performLivepush
 

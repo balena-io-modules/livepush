@@ -65,6 +65,10 @@ export interface ContainerEvents {
 
 type ContainerEventEmitter = StrictEventEmitter<EventEmitter, ContainerEvents>;
 
+export interface ContainerConstructOpts {
+	skipRestart?: boolean;
+}
+
 export class Container extends (EventEmitter as {
 	// We need to avoid the tslint errors here, as typescript
 	// will not accept the changes proposed
@@ -74,26 +78,35 @@ export class Container extends (EventEmitter as {
 	private cancelled: boolean = false;
 	private buildArguments: Dictionary<string> = {};
 
+	private skipRestart = false;
+
 	private constructor(
 		private buildContext: string,
 		private docker: Docker,
 		public containerId: string,
+		opts: ContainerConstructOpts,
 	) {
 		super();
+
+		if (opts.skipRestart != null) {
+			this.skipRestart = opts.skipRestart;
+		}
 	}
 
 	public static fromContainerId(
 		buildContext: string,
 		docker: Docker,
 		containerId: string,
+		opts: ContainerConstructOpts = {},
 	): Container {
-		return new Container(buildContext, docker, containerId);
+		return new Container(buildContext, docker, containerId, opts);
 	}
 
 	public static async fromImage(
 		buildContext: string,
 		docker: Docker,
 		imageId: string,
+		opts: ContainerConstructOpts = {},
 	): Promise<Container> {
 		// Create a container from the image id
 		const container = await docker.createContainer({
@@ -103,7 +116,7 @@ export class Container extends (EventEmitter as {
 		// And start the container
 		await container.start();
 
-		return new Container(buildContext, docker, container.id);
+		return new Container(buildContext, docker, container.id, opts);
 	}
 
 	public async checkRunning(): Promise<boolean> {
@@ -141,7 +154,6 @@ export class Container extends (EventEmitter as {
 		addedOrUpdated: string[],
 		deleted: string[],
 		containers: StageContainers,
-		finalStage: boolean = true,
 	): Promise<void> {
 		if (!(await this.checkRunning())) {
 			throw new ContainerNotRunningError();
@@ -179,8 +191,7 @@ export class Container extends (EventEmitter as {
 		}
 
 		// If we made any changes, restart the container
-		// (only if it's the final stage)
-		if (actionGroups.length > 0 && finalStage) {
+		if (!this.skipRestart && actionGroups.length > 0) {
 			this.emit('containerRestart');
 			await this.restartContainer();
 		}
