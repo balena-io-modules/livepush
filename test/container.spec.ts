@@ -608,11 +608,11 @@ describe('Containers', () => {
 			});
 		});
 
-		describe('Container restarting', () => {
-			it('should restart a container after making changes', async function() {
-				// Reduce the timeout because this is the failure mode
-				this.timeout(45000);
+		describe('Container restarting', function() {
+			// Reduce the timeout because this is the failure mode
+			this.timeout(45000);
 
+			const getEventStreamPromise = (restartWanted: boolean) => {
 				return new Promise(async (resolve, reject) => {
 					// Set up an event stream
 					const eventStream = await docker.getEvents({
@@ -626,46 +626,104 @@ describe('Containers', () => {
 						try {
 							const obj = JSON.parse(data.toString());
 							if (obj.status === 'kill') {
-								killed = true;
-							} else if (obj.status === 'start') {
-								if (killed) {
-									resolve();
+								if (restartWanted) {
+									killed = true;
 								} else {
-									reject(new Error('Container start request without a kill'));
+									reject(new Error('Incorrect restart of container'));
+									// Force killing of the read stream, otherwise
+									// the process never finishes (cast to any as
+									// this is undocumented)
+									(eventStream as any).destroy();
 								}
-								// Force killing of the read stream, otherwise
-								// the process never finishes (cast to any as
-								// this is undocumented)
+							} else if (obj.status === 'start') {
+								if (restartWanted) {
+									if (killed) {
+										resolve();
+									} else {
+										reject(new Error('Container start request without a kill'));
+									}
+								} else {
+									reject(new Error('Incorrect restart of container'));
+								}
+								(eventStream as any).destroy();
+							} else if (obj.status === 'attach') {
+								if (restartWanted) {
+									reject(new Error('Unexpected attach'));
+								} else {
+									resolve();
+								}
 								(eventStream as any).destroy();
 							}
 						} catch {
 							reject(new Error('Could not read event stream'));
 						}
 					});
-
-					const dockerfileContent = [
-						`FROM ${image}`,
-						'WORKDIR /tmp',
-						'COPY a.test b.test',
-						'CMD test',
-					].join('\n');
-					const dockerfile = new Dockerfile(dockerfileContent);
-					const context = Path.join(__dirname, 'contexts', 'a');
-
-					const container = Container.fromContainerId(
-						context,
-						docker,
-						currentContainer.id,
-					);
-
-					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
-
-					expect(tasks)
-						.to.have.property('0')
-						.that.has.length(1);
-
-					await container.executeActionGroups(tasks[0], ['a.test'], [], {});
 				});
+			};
+
+			it('should restart a container after making changes', () => {
+				const dockerfileContent = [
+					`FROM ${image}`,
+					'WORKDIR /tmp',
+					'COPY a.test b.test',
+					'CMD test',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+				const context = Path.join(__dirname, 'contexts', 'a');
+
+				const container = Container.fromContainerId(
+					context,
+					docker,
+					currentContainer.id,
+				);
+
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+
+				expect(tasks)
+					.to.have.property('0')
+					.that.has.length(1);
+
+				return Promise.all([
+					container.executeActionGroups(tasks[0], ['a.test'], [], {}),
+					getEventStreamPromise(true),
+				]);
+			});
+
+			it('should not restart a container if skip restarting is specified', () => {
+				const dockerfileContent = [
+					`FROM ${image}`,
+					'WORKDIR /tmp',
+					'COPY a.test b.test',
+					'CMD test',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+				const context = Path.join(__dirname, 'contexts', 'a');
+
+				const container = Container.fromContainerId(
+					context,
+					docker,
+					currentContainer.id,
+					{ skipRestart: true },
+				);
+
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+
+				expect(tasks)
+					.to.have.property('0')
+					.that.has.length(1);
+
+				return Promise.all([
+					container
+						.executeActionGroups(tasks[0], ['a.test'], [], {})
+						.then(() => {
+							// We abuse a harmless event to signal the end
+							// of the test
+							currentContainer.attach(() => {
+								/* noop */
+							});
+						}),
+					getEventStreamPromise(false),
+				]);
 			});
 		});
 

@@ -11,12 +11,10 @@
     "clean": "rm -rf build",
     "prepare": "npm run build",
     "prepublish": "require-npm4-to-publish",
-    "precommit": "lint-staged",
-    "prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"{lib,test}/**/*.ts\"",
-    "lint": "resin-lint --typescript lib/ test/ && tsc --noEmit",
-    "build": "npm run clean && npm run prettify && tsc --project tsconfig.publish.json",
+    "lint": "resin-lint --typescript --fix lib/ test/ && tsc --noEmit",
+    "build": "npm run clean && tsc --project tsconfig.publish.json",
     "build:test": "npm run clean && tsc --project . && npm run test:copy",
-    "test": "npm run prettify && npm run lint && npm run test:cov",
+    "test": "npm run lint && npm run test:cov",
     "test:cov": "npm run build:test && nyc mocha build/test/*.spec.js",
     "test:copy": "cp -r test/contexts build/test/; cp -r test/dockerfiles build/test/",
     "test:fast": "TS_NODE_FILES=true npx mocha --require ts-node/register test/**/*.spec.ts",
@@ -45,13 +43,12 @@
     "lint-staged": "^8.0.4",
     "mocha": "^5.2.0",
     "nyc": "^13.1.0",
-    "prettier": "^1.14.3",
     "require-npm4-to-publish": "^1.0.0",
-    "resin-lint": "^3.0.0",
+    "resin-lint": "^3.3.1",
     "sinon": "^6.3.5",
     "source-map-support": "^0.5.10",
     "tar-fs": "^2.0.0",
-    "typescript": "^3.4.3"
+    "typescript": "^3.8.3"
   },
   "dependencies": {
     "bluebird": "^3.5.1",
@@ -66,5 +63,10 @@
     "strict-event-emitter-types": "^2.0.0",
     "ts-node": "^8.0.3",
     "typed-error": "^3.0.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   }
 }
