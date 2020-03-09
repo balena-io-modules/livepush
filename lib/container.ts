@@ -141,6 +141,7 @@ export class Container extends (EventEmitter as {
 		addedOrUpdated: string[],
 		deleted: string[],
 		containers: StageContainers,
+		finalStage: boolean = true,
 	): Promise<void> {
 		if (!(await this.checkRunning())) {
 			throw new ContainerNotRunningError();
@@ -178,7 +179,8 @@ export class Container extends (EventEmitter as {
 		}
 
 		// If we made any changes, restart the container
-		if (actionGroups.length > 0) {
+		// (only if it's the final stage)
+		if (actionGroups.length > 0 && finalStage) {
 			this.emit('containerRestart');
 			await this.restartContainer();
 		}
