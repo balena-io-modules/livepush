@@ -50,13 +50,13 @@ the `CMD` step will run again.
 #### init()
 
 ```typescript
-static init(
+static init({
 	dockerfileContent: string | Buffer,
 	context: string,
 	containerId: string,
 	stageImages: string[],
 	docker: Dockerode,
-): Promise<Livepush>
+}): Promise<Livepush>
 ```
 
 Initialise a new Livepush instance with the dockerfile

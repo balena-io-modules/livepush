@@ -16,6 +16,14 @@ export interface LivepushEvents {
 	cancel: void;
 }
 
+export interface LivepushConstructOpts {
+	dockerfileContent: string | Buffer;
+	context: string;
+	containerId: string;
+	stageImages: string[];
+	docker: Dockerode;
+}
+
 type ContainerEventEmitter = StrictEventEmitter<EventEmitter, LivepushEvents>;
 
 export class Livepush extends (EventEmitter as {
@@ -29,26 +37,20 @@ export class Livepush extends (EventEmitter as {
 	private cancelRun = false;
 
 	private constructor(
-		public docker: Dockerode,
 		public dockerfile: Dockerfile,
 		public containers: StageContainers,
 	) {
 		super();
+
 		this.assignEventHandlers();
 	}
 
-	public static async init(
-		dockerfileContent: string | Buffer,
-		context: string,
-		containerId: string,
-		stageImages: string[],
-		docker: Dockerode,
-	): Promise<Livepush> {
-		const dockerfile = new Dockerfile(dockerfileContent);
+	public static async init(opts: LivepushConstructOpts): Promise<Livepush> {
+		const dockerfile = new Dockerfile(opts.dockerfileContent);
 
-		if (dockerfile.stages.length - 1 !== stageImages.length) {
+		if (dockerfile.stages.length - 1 !== opts.stageImages.length) {
 			const dStages = dockerfile.stages.length;
-			const argStages = stageImages.length;
+			const argStages = opts.stageImages.length;
 			throw new InvalidArgumentError(
 				`Dockerfile with ${dStages} stages provided,` +
 					` but ${argStages} image IDs passed to livepush constructor (there should be ${dStages -
@@ -59,16 +61,20 @@ export class Livepush extends (EventEmitter as {
 		const containers: StageContainers = {};
 		// create the list of containers, in the order of the
 		// stages
-		for (const [idx, stageImage] of stageImages.entries()) {
-			containers[idx] = await Container.fromImage(context, docker, stageImage);
+		for (const [idx, stageImage] of opts.stageImages.entries()) {
+			containers[idx] = await Container.fromImage(
+				opts.context,
+				opts.docker,
+				stageImage,
+			);
 		}
 		containers[dockerfile.stages.length - 1] = Container.fromContainerId(
-			context,
-			docker,
-			containerId,
+			opts.context,
+			opts.docker,
+			opts.containerId,
 		);
 
-		return new Livepush(docker, dockerfile, containers);
+		return new Livepush(dockerfile, containers);
 	}
 
 	public async performLivepush(
