@@ -105,6 +105,7 @@ export class Livepush extends (EventEmitter as {
 					addedOrUpdated,
 					deleted,
 					this.containers,
+					keys.length - 1 === stageIdx,
 				);
 			}
 		} finally {
