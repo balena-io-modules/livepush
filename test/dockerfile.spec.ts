@@ -33,7 +33,10 @@ describe('Dockerfile', () => {
 		const singleStageBase = path.join(base, 'single-stage');
 		const multiStageBase = path.join(base, 'multi-stage');
 
-		const pairs = [[singleStageBase, 'single'], [multiStageBase, 'multi']];
+		const pairs = [
+			[singleStageBase, 'single'],
+			[multiStageBase, 'multi'],
+		];
 
 		for (const [dir, prefix] of pairs) {
 			const files = await fs.readdir(dir);
