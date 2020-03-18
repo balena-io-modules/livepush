@@ -5,25 +5,25 @@ buildSteps: &buildSteps
   - checkout
   - run:
       name: install-npm
-      command: npm ci
+      command: npm i
   - run:
       name: test
       command: npm test
 
 jobs:
-  "node-8":
+  'node-8':
     docker:
       - image: circleci/node:8
     working_directory: ~/node-8
     steps: *buildSteps
 
-  "node-10":
+  'node-10':
     docker:
       - image: circleci/node:10
     working_directory: ~/node-10
     steps: *buildSteps
 
-  "node-12":
+  'node-12':
     docker:
       - image: circleci/node:12
     working_directory: ~/node-12
@@ -33,6 +33,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - "node-8"
-      - "node-10"
-      - "node-12"
+      - 'node-8'
+      - 'node-10'
+      - 'node-12'
