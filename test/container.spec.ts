@@ -616,9 +616,12 @@ describe('Containers', () => {
 				return new Promise(async (resolve, reject) => {
 					// Set up an event stream
 					const eventStream = await docker.getEvents({
-						filter: {
+						filters: {
 							container: [currentContainer.id],
-						},
+							// TODO: Once:
+							// https://github.com/DefinitelyTyped/DefinitelyTyped/pull/43100
+							// is merged and released, remove this as any
+						} as any,
 					});
 
 					let killed = false;
