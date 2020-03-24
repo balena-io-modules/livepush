@@ -10,11 +10,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as parser from 'docker-file-parser';
 import * as _ from 'lodash';
 import * as path from 'path';
 
 import ActionGroup from './action-group';
+import { parseDockerfile } from './dockerfile-parser';
 import { DockerfileParseError, UnsupportedError } from './errors';
 import Stage from './stage';
 
@@ -85,17 +85,7 @@ export class Dockerfile {
 	}
 
 	private parse(dockerfileContent: string) {
-		// Until https://github.com/joyent/node-docker-file-parser/issues/8
-		// is fixed, we first remove all comments from the
-		// dockerfile
-		dockerfileContent = dockerfileContent
-			.split(/\r?\n/)
-			.filter(line => !line.trimLeft().startsWith('#'))
-			.join('\n');
-
-		const entries = parser.parse(dockerfileContent, {
-			includeComments: false,
-		});
+		const entries = parseDockerfile(dockerfileContent);
 
 		let currentStage: Stage | null = null;
 		let stageIdx = 0;
