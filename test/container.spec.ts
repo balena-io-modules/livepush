@@ -618,10 +618,7 @@ describe('Containers', () => {
 					const eventStream = await docker.getEvents({
 						filters: {
 							container: [currentContainer.id],
-							// TODO: Once:
-							// https://github.com/DefinitelyTyped/DefinitelyTyped/pull/43100
-							// is merged and released, remove this as any
-						} as any,
+						},
 					});
 
 					let killed = false;
