@@ -16,8 +16,10 @@ export interface LivepushEvents {
 	cancel: void;
 }
 
-export interface LivepushConstructOpts {
-	dockerfileContent: string | Buffer;
+export type LivepushConstructOpts = (
+	| { dockerfile: Dockerfile }
+	| { dockerfileContent: Buffer | string }
+) & {
 	context: string;
 	containerId: string;
 	stageImages: string[];
@@ -29,7 +31,7 @@ export interface LivepushConstructOpts {
 	// program runner is being used, for example
 	// node-supervisor
 	skipContainerRestart?: boolean;
-}
+};
 
 type ContainerEventEmitter = StrictEventEmitter<EventEmitter, LivepushEvents>;
 
@@ -53,7 +55,16 @@ export class Livepush extends (EventEmitter as {
 	}
 
 	public static async init(opts: LivepushConstructOpts): Promise<Livepush> {
-		const dockerfile = new Dockerfile(opts.dockerfileContent);
+		const dockerfile =
+			'dockerfileContent' in opts
+				? new Dockerfile(opts.dockerfileContent)
+				: opts.dockerfile;
+
+		if (dockerfile == null) {
+			throw new InvalidArgumentError(
+				`A Dockerfile instance or a Dockerfile content must be supplied`,
+			);
+		}
 
 		if (dockerfile.stages.length - 1 !== opts.stageImages.length) {
 			const dStages = dockerfile.stages.length;
