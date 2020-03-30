@@ -12,7 +12,7 @@ describe('Dockerfile parsing', () => {
 					name: 'LIVECMD',
 					args: 'webpack-dev-server',
 					lineno: 1,
-					raw: 'dev-cmd-live=webpack-dev-server',
+					raw: '#dev-cmd-live=webpack-dev-server',
 				},
 			]);
 		});
@@ -25,7 +25,7 @@ describe('Dockerfile parsing', () => {
 					name: 'LIVECMD',
 					args: 'webpack-dev-server',
 					lineno: 4,
-					raw: 'dev-cmd-live=webpack-dev-server',
+					raw: '#dev-cmd-live=webpack-dev-server',
 				},
 			]);
 		});

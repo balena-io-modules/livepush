@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 
 import ActionGroup from './action-group';
-import { parseDockerfile } from './dockerfile-parser';
+import { CommandEntry, parseDockerfile } from './dockerfile-parser';
 import { DockerfileParseError, UnsupportedError } from './errors';
 import Stage from './stage';
 
@@ -23,10 +23,17 @@ export interface StagedActionGroups {
 }
 
 export class Dockerfile {
-	public stages: Stage[] = [];
+	public stages: Stage[];
+	public liveCmd: null | string = null;
+
+	private dockerfileContent: string;
+	private parsedDockerfile: CommandEntry[];
 
 	public constructor(dockerfileContent: string | Buffer) {
-		this.parse(dockerfileContent.toString());
+		if (Buffer.isBuffer(dockerfileContent)) {
+			dockerfileContent = dockerfileContent.toString();
+		}
+		this.parse(dockerfileContent);
 	}
 
 	public getActionGroupsFromChangedFiles(files: string[]): StagedActionGroups {
@@ -84,14 +91,68 @@ export class Dockerfile {
 		return stagedGroups;
 	}
 
-	private parse(dockerfileContent: string) {
-		const entries = parseDockerfile(dockerfileContent);
+	public generateLiveDockerfile(): string {
+		// First, if there's no live cmd, we can just return the
+		// original dockerfile
+		if (!this.liveCmd) {
+			return this.dockerfileContent;
+		}
 
+		let foundLiveCmd = false;
+		let liveDockerfile = '';
+
+		for (const entry of this.parsedDockerfile) {
+			if (entry.name === 'FROM') {
+				// If we haven't encountered the liveCmd yet, we can
+				// forward this as normal. If we have, we generate
+				// the dockerfile, as stages following a liveCmd
+				// should be ignored
+				if (!foundLiveCmd) {
+					liveDockerfile += `${entry.raw}\n`;
+				} else {
+					break;
+				}
+			} else if (entry.name === 'RUN') {
+				// If we've reached a liveCmd, we no longer care
+				// about any run commands, and can skip them,
+				// otherwise we forward them as usual
+				if (!foundLiveCmd) {
+					liveDockerfile += `${entry.raw}\n`;
+				}
+			} else if (entry.name === 'LIVECMD') {
+				foundLiveCmd = true;
+				// We know that entry.args is always a string here,
+				// as the dockerfile-parser module in this project
+				// parses it as such (even though the typing is more
+				// permissive)
+				liveDockerfile += `CMD ${entry.args}\n`;
+			} else if (entry.name !== 'CMD') {
+				// Everything else gets added with no modifications
+
+				liveDockerfile += `${entry.raw}\n`;
+			}
+		}
+
+		// Also parse this generated file, to update the
+		// internal representation
+		this.parse(liveDockerfile);
+		return liveDockerfile;
+	}
+
+	private parse(dockerfileContent: string) {
+		this.dockerfileContent = dockerfileContent;
+		const entries = parseDockerfile(dockerfileContent).map(e => ({
+			...e,
+			name: e.name.toUpperCase(),
+		}));
+		this.parsedDockerfile = entries;
+
+		this.stages = [];
 		let currentStage: Stage | null = null;
 		let stageIdx = 0;
 
 		for (const entry of entries) {
-			switch (entry.name.toUpperCase()) {
+			switch (entry.name) {
 				case 'FROM':
 					const args = entry.args as string;
 					const parts = args.split(' ');
@@ -164,6 +225,16 @@ export class Dockerfile {
 					}
 					currentStage.addCommandStep(Dockerfile.processRunArgs(entry.args));
 					break;
+
+				// Directives
+				case 'LIVECMD':
+					if (this.liveCmd != null) {
+						throw new DockerfileParseError(
+							'Only a single live cmd should be specified',
+						);
+					}
+					// The following is always a string
+					this.liveCmd = entry.args as string;
 			}
 		}
 
@@ -174,6 +245,10 @@ export class Dockerfile {
 		if (currentStage != null) {
 			currentStage.isLast = true;
 		}
+	}
+
+	public hasLiveCmd() {
+		return this.liveCmd !== null;
 	}
 
 	private stageNameToIndex(name: string): number {

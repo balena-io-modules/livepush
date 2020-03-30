@@ -14,7 +14,7 @@ import * as tar from 'tar-stream';
 import Container from '../lib/container';
 import { streamToBuffer } from '../lib/util';
 
-import { Dockerfile } from '../lib';
+import Livepush, { Dockerfile } from '../lib';
 import { ContainerNotRunningError } from '../lib/errors';
 import { resolveFileDestination } from '../lib/stage-copy';
 import docker from './docker';
@@ -706,6 +706,46 @@ describe('Containers', () => {
 					{ skipRestart: true },
 				);
 
+				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+
+				expect(tasks)
+					.to.have.property('0')
+					.that.has.length(1);
+
+				return Promise.all([
+					container
+						.executeActionGroups(tasks[0], ['a.test'], [], {})
+						.then(() => {
+							// We abuse a harmless event to signal the end
+							// of the test
+							currentContainer.attach(() => {
+								/* noop */
+							});
+						}),
+					getEventStreamPromise(false),
+				]);
+			});
+
+			it('should not restart a container if a live cmd is defined', async () => {
+				const dockerfileContent = [
+					`FROM ${image}`,
+					'WORKDIR /tmp',
+					'COPY a.test b.test',
+					'#dev-cmd-live=test2',
+					'CMD test',
+				].join('\n');
+				const dockerfile = new Dockerfile(dockerfileContent);
+				const context = Path.join(__dirname, 'contexts', 'a');
+
+				const livepush = await Livepush.init({
+					containerId: currentContainer.id,
+					context,
+					docker,
+					dockerfile,
+					stageImages: [],
+				});
+
+				const container = (livepush as any).containers[0];
 				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
 
 				expect(tasks)
