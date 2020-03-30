@@ -3,6 +3,8 @@ import { CommandEntry, parse } from 'docker-file-parser';
 const LiveCommandDirective = 'dev-cmd-live';
 const EscapeDirective = 'escape';
 
+export { CommandEntry };
+
 export function parseDockerfile(content: string | Buffer): CommandEntry[] {
 	// This function may look a little weird, but due to bugs
 	// in the comment parsing of docker-file-parser we first go
@@ -87,7 +89,7 @@ function extractDirective(
 	const common = {
 		args: match[2],
 		lineno,
-		raw: comment,
+		raw: `#${comment}`,
 	};
 
 	switch (match[1].toLowerCase()) {

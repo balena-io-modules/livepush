@@ -32,10 +32,12 @@ describe('Dockerfile', () => {
 		const base = path.join(__dirname, 'dockerfiles');
 		const singleStageBase = path.join(base, 'single-stage');
 		const multiStageBase = path.join(base, 'multi-stage');
+		const liveCmdBase = path.join(base, 'livecmd');
 
 		const pairs = [
 			[singleStageBase, 'single'],
 			[multiStageBase, 'multi'],
+			[liveCmdBase, 'livecmd'],
 		];
 
 		for (const [dir, prefix] of pairs) {
@@ -546,6 +548,82 @@ describe('Dockerfile', () => {
 				const dockerfile = new Dockerfile(dockerfileContent['multi-i']);
 				const stage = dockerfile.stages[2];
 				expect(stage.getActionGroupsForChangedStage(1)).to.have.length(0);
+			});
+		});
+	});
+
+	describe('Live cmds', () => {
+		it('should correctly detect and store a live cmd', () => {
+			const dockerfile = new Dockerfile(dockerfileContent['livecmd-a']);
+			expect(dockerfile)
+				.to.have.property('liveCmd')
+				.that.equals('livecmd');
+		});
+
+		it('should throw an error if a livecmd appears in an intermediate stage', () => {
+			expect(
+				() => new Dockerfile(dockerfileContent['livecmd-b']),
+			).to.not.throw();
+		});
+
+		it('should throw if more than one livecmd is specified', () => {
+			expect(() => new Dockerfile(dockerfileContent['livecmd-c'])).to.throw(
+				DockerfileParseError,
+			);
+		});
+
+		describe('Build Dockerfile generation', () => {
+			it('should return the same Dockerfile when there is no livecmd', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['single-a']);
+				expect(dockerfile.generateLiveDockerfile()).to.equal(
+					dockerfileContent['single-a'].toString(),
+				);
+			});
+
+			it('should correctly generate a live Dockerfile when a livecmd is present', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['livecmd-a']);
+				expect(dockerfile.generateLiveDockerfile()).to.equal(
+					[
+						'FROM base',
+						'RUN command',
+						'COPY file file',
+						'RUN command2',
+						'COPY file2 file2',
+						'CMD livecmd\n',
+					].join('\n'),
+				);
+			});
+
+			it('should correctly generate a live Dockerfile when there is array arguments to RUN and COPY', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['livecmd-d']);
+				expect(dockerfile.generateLiveDockerfile()).to.equal(
+					[
+						'FROM test',
+						'RUN ["my", "command"]',
+						'CMD test',
+						'COPY ["asd", "asd"]\n',
+					].join('\n'),
+				);
+			});
+
+			it('should correctly passthrough docker directives', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['livecmd-e']);
+				expect(dockerfile.generateLiveDockerfile().trimRight()).to.equal(
+					['FROM test', 'CMD test', '#escape=\\'].join('\n'),
+				);
+			});
+
+			it('should generate a live Dockerfile when the livecmd is not in the final stage', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['livecmd-f']);
+				expect(dockerfile.generateLiveDockerfile().trimRight()).to.equal(
+					['FROM a', 'COPY b b', 'RUN b', 'CMD asd'].join('\n'),
+				);
+			});
+
+			it('should replace the internal represntation after generating the dockerfile', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['livecmd-f']);
+				dockerfile.generateLiveDockerfile();
+				expect(dockerfile.stages).to.have.length(1);
 			});
 		});
 	});

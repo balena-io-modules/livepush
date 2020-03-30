@@ -1,0 +1,13 @@
+FROM base
+
+RUN command
+
+COPY file file
+
+RUN command2
+
+COPY file2 file2
+
+#dev-cmd-live=livecmd
+
+CMD othercmd
