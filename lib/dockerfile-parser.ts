@@ -76,7 +76,7 @@ function extractComment(line: string) {
 }
 
 // TODO: Perhaps make this regex more strict?
-const directiveRegex = /(.+)=(.+)/;
+const directiveRegex = /([^=]+)=(.+)/;
 function extractDirective(
 	comment: string,
 	lineno: number,
