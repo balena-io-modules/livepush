@@ -560,6 +560,13 @@ describe('Dockerfile', () => {
 				.that.equals('livecmd');
 		});
 
+		it('should correctly store a livecmd with an equals in it', () => {
+			const dockerfile = new Dockerfile(dockerfileContent['livecmd-g']);
+			expect(dockerfile)
+				.to.have.property('liveCmd')
+				.that.equals('LIVEPUSH=1 my-command arguments');
+		});
+
 		it('should throw an error if a livecmd appears in an intermediate stage', () => {
 			expect(
 				() => new Dockerfile(dockerfileContent['livecmd-b']),
