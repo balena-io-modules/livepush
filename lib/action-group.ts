@@ -30,6 +30,7 @@ export interface LocalCopy {
 interface ActionGroupCore {
 	commands: Command[];
 	workdir: string;
+	restart: boolean;
 }
 
 export interface StageDependentActionGroup extends ActionGroupCore {

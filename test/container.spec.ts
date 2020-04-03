@@ -610,7 +610,7 @@ describe('Containers', () => {
 
 		describe('Container restarting', function() {
 			// Reduce the timeout because this is the failure mode
-			this.timeout(45000);
+			this.timeout(15000);
 
 			const getEventStreamPromise = (restartWanted: boolean) => {
 				return new Promise(async (resolve, reject) => {
@@ -726,44 +726,155 @@ describe('Containers', () => {
 				]);
 			});
 
-			it('should not restart a container if a live cmd is defined', async () => {
-				const dockerfileContent = [
-					`FROM ${image}`,
-					'WORKDIR /tmp',
-					'COPY a.test b.test',
-					'#dev-cmd-live=test2',
-					'CMD test',
-				].join('\n');
-				const dockerfile = new Dockerfile(dockerfileContent);
-				const context = Path.join(__dirname, 'contexts', 'a');
+			describe('LiveCmd restarting', () => {
+				it('should not restart a container if a file is changed after the livecmd', async () => {
+					const dockerfileContent = [
+						`FROM ${image}`,
+						'WORKDIR /tmp',
+						'#dev-cmd-live=test2',
+						'COPY a.test b.test',
+						'CMD test',
+					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
+					const context = Path.join(__dirname, 'contexts', 'a');
 
-				const livepush = await Livepush.init({
-					containerId: currentContainer.id,
-					context,
-					docker,
-					dockerfile,
-					stageImages: [],
+					const livepush = await Livepush.init({
+						containerId: currentContainer.id,
+						context,
+						docker,
+						dockerfile,
+						stageImages: [],
+					});
+
+					const container = (livepush as any).containers[0];
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
+
+					return Promise.all([
+						container
+							.executeActionGroups(tasks[0], ['a.test'], [], {})
+							.then(() => {
+								// We abuse a harmless event to signal the end
+								// of the test
+								currentContainer.attach(() => {
+									/* noop */
+								});
+							}),
+						getEventStreamPromise(false),
+					]);
 				});
 
-				const container = (livepush as any).containers[0];
-				const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+				it('should restart the contaner when a command is executed before the livecmd', async () => {
+					const dockerfileContent = [
+						`FROM ${image}`,
+						'WORKDIR /tmp',
+						'COPY a.test b.test',
+						'RUN echo "test"',
+						'#dev-cmd-live=test2',
+						'COPY c.test e.test',
+						'CMD test',
+					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
 
-				expect(tasks)
-					.to.have.property('0')
-					.that.has.length(1);
+					const context = Path.join(__dirname, 'contexts', 'a');
 
-				return Promise.all([
-					container
-						.executeActionGroups(tasks[0], ['a.test'], [], {})
-						.then(() => {
-							// We abuse a harmless event to signal the end
-							// of the test
-							currentContainer.attach(() => {
-								/* noop */
-							});
-						}),
-					getEventStreamPromise(false),
-				]);
+					const livepush = await Livepush.init({
+						containerId: currentContainer.id,
+						context,
+						docker,
+						dockerfile,
+						stageImages: [],
+					});
+
+					const container = (livepush as any).containers[0];
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(2);
+
+					await Promise.all([
+						container.executeActionGroups(tasks[0], ['a.test'], [], {}),
+						getEventStreamPromise(true),
+					]);
+				});
+				it('should restart the contaner when a copy appears before the livecmd', async () => {
+					const dockerfileContent = [
+						`FROM ${image}`,
+						'WORKDIR /tmp',
+						'COPY a.test b.test',
+						'#dev-cmd-live=test2',
+						'COPY c.test e.test',
+						'CMD test',
+					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
+
+					const context = Path.join(__dirname, 'contexts', 'a');
+
+					const livepush = await Livepush.init({
+						containerId: currentContainer.id,
+						context,
+						docker,
+						dockerfile,
+						stageImages: [],
+					});
+
+					const container = (livepush as any).containers[0];
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(2);
+
+					await Promise.all([
+						container.executeActionGroups(tasks[0], ['a.test'], [], {}),
+						getEventStreamPromise(true),
+					]);
+				});
+				it('should not restart the contaner when a copy appears after the livecmd with a run', async () => {
+					const dockerfileContent = [
+						`FROM ${image}`,
+						'WORKDIR /tmp',
+						'#dev-cmd-live=test2',
+						'COPY a.test e.test',
+						'RUN command',
+						'CMD test',
+					].join('\n');
+					const dockerfile = new Dockerfile(dockerfileContent);
+
+					const context = Path.join(__dirname, 'contexts', 'a');
+
+					const livepush = await Livepush.init({
+						containerId: currentContainer.id,
+						context,
+						docker,
+						dockerfile,
+						stageImages: [],
+					});
+
+					const container = (livepush as any).containers[0];
+					const tasks = dockerfile.getActionGroupsFromChangedFiles(['a.test']);
+
+					expect(tasks)
+						.to.have.property('0')
+						.that.has.length(1);
+
+					return Promise.all([
+						container
+							.executeActionGroups(tasks[0], ['a.test'], [], {})
+							.then(() => {
+								// We abuse a harmless event to signal the end
+								// of the test
+								currentContainer.attach(() => {
+									/* noop */
+								});
+							}),
+						getEventStreamPromise(false),
+					]);
+				});
 			});
 		});
 

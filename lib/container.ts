@@ -191,7 +191,7 @@ export class Container extends (EventEmitter as {
 		}
 
 		// If we made any changes, restart the container
-		if (!this.skipRestart && actionGroups.length > 0) {
+		if (!this.skipRestart && this.requiresRestart(actionGroups)) {
 			this.emit('containerRestart');
 			await this.restartContainer();
 		}
@@ -241,6 +241,10 @@ export class Container extends (EventEmitter as {
 
 	public setBuildArguments(buildArgs: Dictionary<string>): void {
 		this.buildArguments = buildArgs;
+	}
+
+	private requiresRestart(actionGroups: ActionGroup[]): boolean {
+		return _.some(actionGroups, 'restart');
 	}
 
 	private async runActionGroupCommand(command: string): Promise<number> {

@@ -28,8 +28,12 @@ export class Dockerfile {
 
 	private dockerfileContent: string;
 	private parsedDockerfile: CommandEntry[];
+	private liveDockerfile: string | undefined;
 
-	public constructor(dockerfileContent: string | Buffer) {
+	public constructor(
+		dockerfileContent: string | Buffer,
+		private autoGenerateLiveDockerfile = true,
+	) {
 		if (Buffer.isBuffer(dockerfileContent)) {
 			dockerfileContent = dockerfileContent.toString();
 		}
@@ -98,6 +102,11 @@ export class Dockerfile {
 			return this.dockerfileContent;
 		}
 
+		// If we've already generated the dockerfile, don't regenerate
+		if (this.liveDockerfile != null) {
+			return this.liveDockerfile;
+		}
+
 		let foundLiveCmd = false;
 		let liveDockerfile = '';
 
@@ -121,6 +130,12 @@ export class Dockerfile {
 				}
 			} else if (entry.name === 'LIVECMD') {
 				foundLiveCmd = true;
+				// We add a marker into the generated dockerfile
+				// that we can use to work out in which case we
+				// should restart the containers. Copies which
+				// appear after this marker do not cause a container
+				// restart
+				liveDockerfile += '#livecmd-marker=1\n';
 				// We know that entry.args is always a string here,
 				// as the dockerfile-parser module in this project
 				// parses it as such (even though the typing is more
@@ -128,13 +143,13 @@ export class Dockerfile {
 				liveDockerfile += `CMD ${entry.args}\n`;
 			} else if (entry.name !== 'CMD') {
 				// Everything else gets added with no modifications
-
 				liveDockerfile += `${entry.raw}\n`;
 			}
 		}
 
 		// Also parse this generated file, to update the
 		// internal representation
+		this.liveDockerfile = liveDockerfile;
 		this.parse(liveDockerfile);
 		return liveDockerfile;
 	}
@@ -150,6 +165,7 @@ export class Dockerfile {
 		this.stages = [];
 		let currentStage: Stage | null = null;
 		let stageIdx = 0;
+		let causesRestart = true;
 
 		for (const entry of entries) {
 			switch (entry.name) {
@@ -190,10 +206,11 @@ export class Dockerfile {
 						currentStage.addStageCopyStep(
 							copyArgs,
 							this.stageNameToIndex(flags.from),
+							causesRestart,
 						);
 					} else {
 						// This is a local fs copy
-						currentStage.addLocalCopyStep(copyArgs);
+						currentStage.addLocalCopyStep(copyArgs, causesRestart);
 					}
 					break;
 				case 'ADD':
@@ -214,7 +231,7 @@ export class Dockerfile {
 							`Non-string argument passed to WORKDIR on line ${entry.lineno}`,
 						);
 					}
-					currentStage.addWorkdirStep(entry.args);
+					currentStage.addWorkdirStep(entry.args, causesRestart);
 					break;
 				case 'RUN':
 					/* istanbul ignore next */
@@ -235,6 +252,10 @@ export class Dockerfile {
 					}
 					// The following is always a string
 					this.liveCmd = entry.args as string;
+					break;
+				case 'LIVECMD_MARKER':
+					causesRestart = false;
+					currentStage?.liveCmdFound();
 			}
 		}
 
@@ -245,10 +266,10 @@ export class Dockerfile {
 		if (currentStage != null) {
 			currentStage.isLast = true;
 		}
-	}
 
-	public hasLiveCmd() {
-		return this.liveCmd !== null;
+		if (this.liveDockerfile == null && this.autoGenerateLiveDockerfile) {
+			this.generateLiveDockerfile();
+		}
 	}
 
 	private stageNameToIndex(name: string): number {

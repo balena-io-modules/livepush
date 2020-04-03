@@ -89,14 +89,12 @@ export class Livepush extends (EventEmitter as {
 			);
 		}
 
-		const skipRestart = opts.skipContainerRestart || dockerfile.hasLiveCmd();
-
 		containers[dockerfile.stages.length - 1] = Container.fromContainerId(
 			opts.context,
 			opts.docker,
 			opts.containerId,
 			{
-				skipRestart,
+				skipRestart: opts.skipContainerRestart || false,
 			},
 		);
 
