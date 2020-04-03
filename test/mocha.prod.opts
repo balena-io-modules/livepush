@@ -1,5 +1,4 @@
 --timeout 600000
 --exit
 --require source-map-support/register
---require ts-node/register/transpile-only
-test/**/*.spec.ts
+build/test/*.js
