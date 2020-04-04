@@ -15,10 +15,10 @@
     "build": "npm run clean && tsc --project tsconfig.publish.json",
     "build:test": "npm run clean && tsc --project . && npm run test:copy",
     "test": "npm run lint && npm run test:cov",
-    "test:cov": "npm run build:test && nyc mocha build/test/*.spec.js",
+    "test:cov": "npm run build:test && nyc mocha --opts test/mocha.prod.opts build/test/*.spec.js",
     "test:copy": "cp -r test/contexts build/test/; cp -r test/dockerfiles build/test/",
-    "test:fast": "TS_NODE_FILES=true npx mocha --require ts-node/register test/**/*.spec.ts",
-    "test:watch": "TS_NODE_FILES=true npx mocha --require ts-node/register test/**/*.spec.ts --watch --watch-extensions ts"
+    "test:fast": "TS_NODE_FILES=true npx mocha",
+    "test:watch": "TS_NODE_FILES=true npx mocha --watch --watch-extensions ts"
   },
   "author": "Cameron Diver <cameron@balena.io>",
   "license": "Apache-2.0",

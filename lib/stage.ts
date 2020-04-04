@@ -31,6 +31,7 @@ export class Stage {
 			commands: [],
 			copies: [],
 			workdir: '/',
+			restart: true,
 		},
 	];
 
@@ -49,7 +50,7 @@ export class Stage {
 		public name: string = index.toString(),
 	) {}
 
-	public addLocalCopyStep(args: string[]) {
+	public addLocalCopyStep(args: string[], restartRequired: boolean) {
 		const lastActionGroup = _.last(this.actionGroups)!;
 
 		if (args.length < 2) {
@@ -78,6 +79,7 @@ export class Stage {
 				commands: [],
 				copies: [],
 				workdir: this.lastWorkdir,
+				restart: restartRequired,
 			};
 			actionGroup.copies = this.copyArgsToCopies(checkedArgs, actionGroup);
 			this.actionGroups.push(actionGroup);
@@ -87,7 +89,11 @@ export class Stage {
 		this.lastStepWasCopy = true;
 	}
 
-	public addStageCopyStep(args: string[], stageIdx: number) {
+	public addStageCopyStep(
+		args: string[],
+		stageIdx: number,
+		restartRequired: boolean,
+	) {
 		const lastActionGroup = _.last(this.actionGroups)!;
 
 		if (args.length < 2) {
@@ -121,6 +127,7 @@ export class Stage {
 				stageDependency: stageIdx,
 				copies: [],
 				workdir: this.lastWorkdir,
+				restart: restartRequired,
 			};
 
 			actionGroup.copies = this.copyArgsToCopies(checkedArgs, actionGroup).map(
@@ -144,7 +151,7 @@ export class Stage {
 		this.lastStepWasCopy = false;
 	}
 
-	public addWorkdirStep(workdir: string) {
+	public addWorkdirStep(workdir: string, restartRequired: boolean) {
 		// We need to create a new group, saving any ungrouped commands into
 		// the latest group
 		const actionGroup = _.last(this.actionGroups)!;
@@ -154,6 +161,7 @@ export class Stage {
 			dependentOnStage: false,
 			commands: [],
 			workdir,
+			restart: restartRequired,
 		});
 		this.lastWorkdir = workdir;
 		this.ungroupedCommands = [];
@@ -201,6 +209,10 @@ export class Stage {
 		}
 
 		return [];
+	}
+
+	public liveCmdFound() {
+		this.lastStepWasCopy = false;
 	}
 
 	private canAddCopyToGroup(dependentOnStage: false): boolean;

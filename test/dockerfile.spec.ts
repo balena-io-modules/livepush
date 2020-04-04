@@ -437,6 +437,7 @@ describe('Dockerfile', () => {
 						commands: ['anothercommand', 'multi arg command'],
 						dependentOnStage: false,
 						workdir: '/',
+						restart: true,
 					},
 				]);
 			});
@@ -596,6 +597,7 @@ describe('Dockerfile', () => {
 						'COPY file file',
 						'RUN command2',
 						'COPY file2 file2',
+						'#livecmd-marker=1',
 						'CMD livecmd\n',
 					].join('\n'),
 				);
@@ -607,6 +609,7 @@ describe('Dockerfile', () => {
 					[
 						'FROM test',
 						'RUN ["my", "command"]',
+						'#livecmd-marker=1',
 						'CMD test',
 						'COPY ["asd", "asd"]\n',
 					].join('\n'),
@@ -616,14 +619,18 @@ describe('Dockerfile', () => {
 			it('should correctly passthrough docker directives', () => {
 				const dockerfile = new Dockerfile(dockerfileContent['livecmd-e']);
 				expect(dockerfile.generateLiveDockerfile().trimRight()).to.equal(
-					['FROM test', 'CMD test', '#escape=\\'].join('\n'),
+					['FROM test', '#livecmd-marker=1', 'CMD test', '#escape=\\'].join(
+						'\n',
+					),
 				);
 			});
 
 			it('should generate a live Dockerfile when the livecmd is not in the final stage', () => {
 				const dockerfile = new Dockerfile(dockerfileContent['livecmd-f']);
 				expect(dockerfile.generateLiveDockerfile().trimRight()).to.equal(
-					['FROM a', 'COPY b b', 'RUN b', 'CMD asd'].join('\n'),
+					['FROM a', 'COPY b b', 'RUN b', '#livecmd-marker=1', 'CMD asd'].join(
+						'\n',
+					),
 				);
 			});
 
@@ -631,6 +638,31 @@ describe('Dockerfile', () => {
 				const dockerfile = new Dockerfile(dockerfileContent['livecmd-f']);
 				dockerfile.generateLiveDockerfile();
 				expect(dockerfile.stages).to.have.length(1);
+			});
+		});
+
+		describe('Restart detection', () => {
+			it('should correctly work out which actions cause a restart with a livecmd', () => {
+				const dockerfile = new Dockerfile(
+					[
+						'FROM a',
+						'RUN a',
+						'COPY a b',
+						'#dev-cmd-live=asd',
+						'COPY c d',
+						'RUN a',
+						'COPY e f',
+						'CMD a',
+					].join('\n'),
+				);
+
+				expect(dockerfile.stages).to.have.length(1);
+
+				const stage = dockerfile.stages[0];
+				expect(stage.actionGroups).to.have.length(3);
+				expect(stage.actionGroups[0].restart).to.be.true;
+				expect(stage.actionGroups[1].restart).to.be.true;
+				expect(stage.actionGroups[2].restart).to.be.false;
 			});
 		});
 	});
