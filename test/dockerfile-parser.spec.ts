@@ -112,4 +112,34 @@ describe('Dockerfile parsing', () => {
 			},
 		]);
 	});
+
+	it('should correctly parse live RUN commands', () => {
+		expect(parseDockerfile('#dev-run=run-this-command')).to.deep.equal([
+			{
+				name: 'LIVERUN',
+				lineno: 1,
+				raw: '#dev-run=run-this-command',
+				args: 'run-this-command',
+			},
+		]);
+		expect(parseDockerfile('#dev-run=run --this --command')).to.deep.equal([
+			{
+				name: 'LIVERUN',
+				lineno: 1,
+				raw: '#dev-run=run --this --command',
+				args: 'run --this --command',
+			},
+		]);
+	});
+
+	it('should correctly parse live RUN commands with exec arguments', () => {
+		expect(parseDockerfile('#dev-run=["some", "executable"]')).to.deep.equal([
+			{
+				name: 'LIVERUN',
+				lineno: 1,
+				raw: '#dev-run=["some", "executable"]',
+				args: '["some", "executable"]',
+			},
+		]);
+	});
 });

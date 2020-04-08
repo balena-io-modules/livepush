@@ -1,6 +1,7 @@
 import { CommandEntry, parse } from 'docker-file-parser';
 
 const LiveCommandDirective = 'dev-cmd-live';
+const RunCommandDirective = 'dev-run';
 const EscapeDirective = 'escape';
 const InternalLiveCmdMarker = 'livecmd-marker';
 
@@ -117,6 +118,14 @@ function extractDirective(
 			return {
 				entry: {
 					name: 'LIVECMD_MARKER',
+					...common,
+				},
+				preserve: false,
+			};
+		case RunCommandDirective:
+			return {
+				entry: {
+					name: 'LIVERUN',
 					...common,
 				},
 				preserve: false,
