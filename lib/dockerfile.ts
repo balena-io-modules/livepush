@@ -97,7 +97,7 @@ export class Dockerfile {
 	}
 
 	public generateLiveDockerfile(): string {
-		// First, if there's no live cmd, we can just return the
+		// First, if there's no live action, we can just return the
 		// original dockerfile
 		if (!this.hasLiveAction) {
 			return this.dockerfileContent;
@@ -143,7 +143,13 @@ export class Dockerfile {
 				// permissive)
 				liveDockerfile += `CMD ${entry.args}\n`;
 			} else if (entry.name === 'LIVERUN') {
-				liveDockerfile += `RUN ${entry.args}`;
+				// LIVERUN commmands just go straight to the
+				// resulting dockerfile
+				liveDockerfile += `RUN ${entry.args}\n`;
+			} else if (entry.name === 'LIVECOPY') {
+				// LIVECOPY commands just go straight to the
+				// resulting dockerfile
+				liveDockerfile += `COPY ${entry.args}\n`;
 			} else if (entry.name === 'CMD') {
 				if (!this.liveCmd) {
 					liveDockerfile += `${entry.raw}\n`;
@@ -262,6 +268,9 @@ export class Dockerfile {
 					this.liveCmd = entry.args as string;
 					break;
 				case 'LIVERUN':
+					this.hasLiveAction = true;
+					break;
+				case 'LIVECOPY':
 					this.hasLiveAction = true;
 					break;
 				case 'LIVECMD_MARKER':

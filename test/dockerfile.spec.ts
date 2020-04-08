@@ -642,11 +642,11 @@ describe('Dockerfile', () => {
 
 			it('should correctly generate live run commands', () => {
 				const dockerfile = new Dockerfile(
-					['FROM asd', '#dev-run=run --this --command'].join('\n'),
+					['FROM asd', '#dev-run=run --this --command\n'].join('\n'),
 				);
 
 				expect(dockerfile.generateLiveDockerfile()).to.deep.equal(
-					['FROM asd', 'RUN run --this --command'].join('\n'),
+					['FROM asd', 'RUN run --this --command\n'].join('\n'),
 				);
 			});
 
@@ -664,7 +664,29 @@ describe('Dockerfile', () => {
 						'FROM asd',
 						'#livecmd-marker=1',
 						'CMD livecmd',
-						'RUN another-command',
+						'RUN another-command\n',
+					].join('\n'),
+				);
+			});
+
+			it('should correctly generate live copies', () => {
+				const dockerfile = new Dockerfile(
+					[
+						'FROM asd',
+						'#dev-copy=file1 file2',
+						'COPY asd asd',
+						'RUN command',
+						'CMD asd',
+					].join('\n'),
+				);
+
+				expect(dockerfile.generateLiveDockerfile()).to.deep.equal(
+					[
+						'FROM asd',
+						'COPY file1 file2',
+						'COPY asd asd',
+						'RUN command',
+						'CMD asd\n',
 					].join('\n'),
 				);
 			});
@@ -727,9 +749,10 @@ describe('Dockerfile', () => {
 
 				expect(dockerfile.stages).to.have.length(1);
 				const stage = dockerfile.stages[0];
-				expect(stage.actionGroups).to.have.length(2);
+				expect(stage.actionGroups).to.have.length(3);
 				expect(stage.actionGroups[0].restart).to.be.true;
-				expect(stage.actionGroups[1].restart).to.be.false;
+				expect(stage.actionGroups[1].restart).to.be.true;
+				expect(stage.actionGroups[2].restart).to.be.false;
 			});
 		});
 	});
