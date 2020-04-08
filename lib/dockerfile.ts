@@ -29,6 +29,7 @@ export class Dockerfile {
 	private dockerfileContent: string;
 	private parsedDockerfile: CommandEntry[];
 	private liveDockerfile: string | undefined;
+	private hasLiveAction: boolean = false;
 
 	public constructor(
 		dockerfileContent: string | Buffer,
@@ -96,9 +97,9 @@ export class Dockerfile {
 	}
 
 	public generateLiveDockerfile(): string {
-		// First, if there's no live cmd, we can just return the
+		// First, if there's no live action, we can just return the
 		// original dockerfile
-		if (!this.liveCmd) {
+		if (!this.hasLiveAction) {
 			return this.dockerfileContent;
 		}
 
@@ -141,7 +142,19 @@ export class Dockerfile {
 				// parses it as such (even though the typing is more
 				// permissive)
 				liveDockerfile += `CMD ${entry.args}\n`;
-			} else if (entry.name !== 'CMD') {
+			} else if (entry.name === 'LIVERUN') {
+				// LIVERUN commmands just go straight to the
+				// resulting dockerfile
+				liveDockerfile += `RUN ${entry.args}\n`;
+			} else if (entry.name === 'LIVECOPY') {
+				// LIVECOPY commands just go straight to the
+				// resulting dockerfile
+				liveDockerfile += `COPY ${entry.args}\n`;
+			} else if (entry.name === 'CMD') {
+				if (!this.liveCmd) {
+					liveDockerfile += `${entry.raw}\n`;
+				}
+			} else {
 				// Everything else gets added with no modifications
 				liveDockerfile += `${entry.raw}\n`;
 			}
@@ -245,6 +258,7 @@ export class Dockerfile {
 
 				// Directives
 				case 'LIVECMD':
+					this.hasLiveAction = true;
 					if (this.liveCmd != null) {
 						throw new DockerfileParseError(
 							'Only a single live cmd should be specified',
@@ -253,14 +267,21 @@ export class Dockerfile {
 					// The following is always a string
 					this.liveCmd = entry.args as string;
 					break;
+				case 'LIVERUN':
+					this.hasLiveAction = true;
+					break;
+				case 'LIVECOPY':
+					this.hasLiveAction = true;
+					break;
 				case 'LIVECMD_MARKER':
+					this.hasLiveAction = true;
 					causesRestart = false;
 					currentStage?.liveCmdFound();
 			}
 		}
 
 		this.stages.forEach(stage => {
-			stage.finalize();
+			stage.finalize(causesRestart);
 		});
 
 		if (currentStage != null) {

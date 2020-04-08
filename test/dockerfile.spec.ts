@@ -634,10 +634,61 @@ describe('Dockerfile', () => {
 				);
 			});
 
-			it('should replace the internal represntation after generating the dockerfile', () => {
+			it('should replace the internal representation after generating the dockerfile', () => {
 				const dockerfile = new Dockerfile(dockerfileContent['livecmd-f']);
 				dockerfile.generateLiveDockerfile();
 				expect(dockerfile.stages).to.have.length(1);
+			});
+
+			it('should correctly generate live run commands', () => {
+				const dockerfile = new Dockerfile(
+					['FROM asd', '#dev-run=run --this --command\n'].join('\n'),
+				);
+
+				expect(dockerfile.generateLiveDockerfile()).to.deep.equal(
+					['FROM asd', 'RUN run --this --command\n'].join('\n'),
+				);
+			});
+
+			it('should include live run commands after livecmds', () => {
+				const dockerfile = new Dockerfile(
+					[
+						'FROM asd',
+						'#dev-cmd-live=livecmd',
+						'#dev-run=another-command',
+					].join('\n'),
+				);
+
+				expect(dockerfile.generateLiveDockerfile()).to.deep.equal(
+					[
+						'FROM asd',
+						'#livecmd-marker=1',
+						'CMD livecmd',
+						'RUN another-command\n',
+					].join('\n'),
+				);
+			});
+
+			it('should correctly generate live copies', () => {
+				const dockerfile = new Dockerfile(
+					[
+						'FROM asd',
+						'#dev-copy=file1 file2',
+						'COPY asd asd',
+						'RUN command',
+						'CMD asd',
+					].join('\n'),
+				);
+
+				expect(dockerfile.generateLiveDockerfile()).to.deep.equal(
+					[
+						'FROM asd',
+						'COPY file1 file2',
+						'COPY asd asd',
+						'RUN command',
+						'CMD asd\n',
+					].join('\n'),
+				);
 			});
 		});
 
@@ -658,6 +709,45 @@ describe('Dockerfile', () => {
 
 				expect(dockerfile.stages).to.have.length(1);
 
+				const stage = dockerfile.stages[0];
+				expect(stage.actionGroups).to.have.length(3);
+				expect(stage.actionGroups[0].restart).to.be.true;
+				expect(stage.actionGroups[1].restart).to.be.true;
+				expect(stage.actionGroups[2].restart).to.be.false;
+			});
+
+			it('should not restart a container when a live run appears after a livecmd', () => {
+				const dockerfile = new Dockerfile(
+					[
+						'FROM asd',
+						'#dev-cmd-live=livecmd',
+						'#dev-run=another-command',
+					].join('\n'),
+				);
+
+				expect(dockerfile.stages).to.have.length(1);
+				const stage = dockerfile.stages[0];
+				expect(stage.actionGroups).to.have.length(1);
+				expect(stage.actionGroups[0].restart).to.be.false;
+			});
+
+			it('should work out which restarts to cause in a larger dockerfile', () => {
+				const dockerfile = new Dockerfile(
+					[
+						'FROM asd',
+						'COPY a b',
+						'RUN a b',
+						'#dev-run=first-command',
+						'COPY b c',
+						'RUN b c',
+						'#dev-cmd-live=livecmd',
+						'#dev-run=another-command',
+						'COPY a c',
+						'RUN b c',
+					].join('\n'),
+				);
+
+				expect(dockerfile.stages).to.have.length(1);
 				const stage = dockerfile.stages[0];
 				expect(stage.actionGroups).to.have.length(3);
 				expect(stage.actionGroups[0].restart).to.be.true;

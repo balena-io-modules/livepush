@@ -168,9 +168,23 @@ export class Stage {
 		this.lastStepWasCopy = false;
 	}
 
-	public finalize() {
+	public finalize(restart: boolean) {
 		const actionGroup = _.last(this.actionGroups) as ActionGroup;
-		actionGroup.commands = actionGroup.commands.concat(this.ungroupedCommands);
+		if (actionGroup.restart !== restart) {
+			// Don't try to group together the commands, as we
+			// could get unwanted restarts
+			this.actionGroups.push({
+				dependentOnStage: false,
+				commands: this.ungroupedCommands,
+				copies: [],
+				restart,
+				workdir: this.lastWorkdir,
+			});
+		} else {
+			actionGroup.commands = actionGroup.commands.concat(
+				this.ungroupedCommands,
+			);
+		}
 
 		// Also filter any action groups which do not have commands or copies,
 		// as these are pointless

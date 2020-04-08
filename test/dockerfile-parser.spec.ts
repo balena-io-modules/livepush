@@ -112,4 +112,56 @@ describe('Dockerfile parsing', () => {
 			},
 		]);
 	});
+
+	it('should correctly parse live RUN commands', () => {
+		expect(parseDockerfile('#dev-run=run-this-command')).to.deep.equal([
+			{
+				name: 'LIVERUN',
+				lineno: 1,
+				raw: '#dev-run=run-this-command',
+				args: 'run-this-command',
+			},
+		]);
+		expect(parseDockerfile('#dev-run=run --this --command')).to.deep.equal([
+			{
+				name: 'LIVERUN',
+				lineno: 1,
+				raw: '#dev-run=run --this --command',
+				args: 'run --this --command',
+			},
+		]);
+	});
+
+	it('should correctly parse live RUN commands with exec arguments', () => {
+		expect(parseDockerfile('#dev-run=["some", "executable"]')).to.deep.equal([
+			{
+				name: 'LIVERUN',
+				lineno: 1,
+				raw: '#dev-run=["some", "executable"]',
+				args: '["some", "executable"]',
+			},
+		]);
+	});
+
+	it('should correctly parse live COPY commands', () => {
+		expect(parseDockerfile('#dev-copy=asd')).to.deep.equal([
+			{
+				name: 'LIVECOPY',
+				lineno: 1,
+				raw: '#dev-copy=asd',
+				args: 'asd',
+			},
+		]);
+	});
+
+	it('should correctly parse live COPY commands with spaces', () => {
+		expect(parseDockerfile('#dev-copy=file1 file2')).to.deep.equal([
+			{
+				name: 'LIVECOPY',
+				lineno: 1,
+				raw: '#dev-copy=file1 file2',
+				args: 'file1 file2',
+			},
+		]);
+	});
 });
