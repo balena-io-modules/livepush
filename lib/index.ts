@@ -8,6 +8,7 @@ import {
 	UnsupportedError,
 } from './errors';
 import Livepush from './livepush';
+import { setupFsWatcher } from './watcher';
 
 export {
 	Container,
@@ -18,6 +19,7 @@ export {
 	Livepush,
 	RuntimeError,
 	UnsupportedError,
+	setupFsWatcher,
 };
 
 export default Livepush;
