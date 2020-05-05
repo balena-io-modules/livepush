@@ -43,6 +43,136 @@ changed, which should be synced into the container. Because
 will happen. After this the container will be restarted and
 the `CMD` step will run again.
 
+## Webpack-dev-server/nodemon/my custom monitor is faster!
+
+We agree! Special case programs can be extremely fast, and
+livepush does not stop you from using them from within a
+container. To enable this, you can use live directives:
+
+### dev-cmd-live
+
+A live cmd, provided by the `dev-cmd-live` direcitve, is the
+command that gets executed in the container when this
+container is running with livepush. It overrides the
+existing `CMD` in the Dockerfile. This is achieved with a
+preprocess step on the Dockerfile.
+
+```Dockerfile
+FROM node
+
+COPY package*.json ./
+
+RUN npm install
+
+#dev-cmd-live=webpack-dev-server
+
+COPY ./src src
+
+RUN npm run build
+
+COPY nginx.conf .
+
+CMD nginx
+```
+
+The above is a webpack based project which also describes
+how it should be run with livepush. Livepush will preprocess
+this Dockerfile to be the equivalent of:
+
+```Dockerfile
+FROM node
+
+COPY package*.json ./
+
+RUN npm install
+
+CMD webpack-dev-server
+
+COPY ./src src
+
+COPY nginx.conf .
+```
+
+Now when this container is executed, the main process will
+be webpack-dev-server. Livepush will still copy in changed
+source files. Livepush will optionally restart the container
+based on a couple of rules:
+
+- If the `COPY` step appears before the `#dev-cmd-live`
+  directive, livepush will restart the container after
+  copying in a file which is specified in that `COPY` step
+- If the `COPY` step appears after the `#dev-cmd-live`
+  directive, livepush will copy in the source file, but will
+  not restart the container, and instead relies on the
+  command specified by `#dev-cmd-live`
+
+In this way, you can develop in a container, and have
+blazing fast restart speeds via the program of your
+choosing.
+
+#### Multistage images
+
+The behavior of a `#dev-cmd-live` in a multistage image is
+as follows:
+
+- When the directive appears in the last stage, it is as
+  described above.
+- When the directive appears in any other stage, livepush
+  will ignore any stages that follow.
+
+For example:
+
+```Dockerfile
+FROM node AS build
+
+COPY package*.json ./
+
+RUN npm install
+
+#dev-cmd-live=webpack-dev-server
+
+COPY ./src src
+
+RUN npm run build
+
+FROM node
+
+COPY --from=build /dist/app.js .
+
+RUN nginx
+```
+
+will be preprocessed to:
+
+```Dockerfile
+FROM node AS build
+
+COPY package*.json ./
+
+RUN npm install
+
+CMD webpack-dev-server
+
+COPY ./src src
+```
+
+## I need other resources in my container when developing!
+
+For this, you can use two other directives:
+
+- `#dev-copy=`
+- `#dev-run=`
+
+These directives take exactly the same kind of arguments
+as their Dockerfile counterparts, but are only executed
+when the container is running as part of a livepush
+process.
+
+Using these, it is possible to bring in any extra
+dependencies that are useful when developing. For example,
+you might choose to install webpack-dev-server using a
+`dev-run` directive to avoid specifying it inside your package.json.
+
 ## Public API
 
 ### Livepush
@@ -71,7 +201,9 @@ via [Dockerode](https://github.com/apocas/dockerode).
 The `skipContainerRestart` flag will stop livepush from
 restarting the running container after performing a
 livepush. This can be useful when the main process has some
-kind of watch mode, for example `webpack-dev-server`, or `node-supervisor`.
+kind of watch mode, for example `webpack-dev-server`, or
+`node-supervisor`. Note that this is not necessary when
+using the live directive.
 
 #### performLivepush
 
@@ -150,7 +282,4 @@ This event is emitted when an ongoing livepush process is cancelled.
 
 ## Planned additions
 
-- Add the ability to not restart the container after a
-  livepush has occurred. This would be useful in combination
-  with source watching programs such as `node-supervisor`.
 - Add events for a livepush process starting and ending
