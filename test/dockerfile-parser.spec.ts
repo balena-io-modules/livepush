@@ -164,4 +164,15 @@ describe('Dockerfile parsing', () => {
 			},
 		]);
 	});
+
+	it('should correctly live ENV commands with spaces', () => {
+		expect(parseDockerfile('#dev-env=UDEV=1 NODE_ENV=dev\n')).to.deep.equal([
+			{
+				name: 'LIVEENV',
+				args: 'UDEV=1 NODE_ENV=dev',
+				lineno: 1,
+				raw: '#dev-env=UDEV=1 NODE_ENV=dev',
+			},
+		]);
+	});
 });

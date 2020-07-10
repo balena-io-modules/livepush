@@ -150,6 +150,10 @@ export class Dockerfile {
 				// LIVECOPY commands just go straight to the
 				// resulting dockerfile
 				liveDockerfile += `COPY ${entry.args}\n`;
+			} else if (entry.name === 'LIVEENV') {
+				// LIVEENV commands just go straight to the
+				// resulting dockerfile
+				liveDockerfile += `ENV ${entry.args}\n`;
 			} else if (entry.name === 'CMD') {
 				if (!this.liveCmd) {
 					liveDockerfile += `${entry.raw}\n`;
