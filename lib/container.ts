@@ -208,9 +208,12 @@ export class Container extends (EventEmitter as {
 		});
 
 		return await new Promise<CommandExecutionContext>((resolve, reject) => {
-			exec.start((err: Error | undefined, stream: Stream.Readable) => {
+			exec.start({}, (err?: Error, stream?: Stream.Readable) => {
 				if (err) {
 					return reject(err);
+				}
+				if (!stream) {
+					return reject(new Error('Stream is not provided'));
 				}
 
 				const stdout = new Stream.PassThrough();
@@ -377,14 +380,17 @@ export class Container extends (EventEmitter as {
 		});
 
 		return await new Promise<number>((resolve, reject) => {
-			exec.start((err: Error | undefined, stream: Stream.Readable) => {
+			exec.start({}, (err?: Error, stream?: Stream.Readable) => {
 				if (err) {
 					return reject(err);
+				}
+				if (!stream) {
+					return reject(new Error('Stream is not provided'));
 				}
 				stream.on('error', reject);
 				stream.on('end', async () => {
 					const inspect = await exec.inspect();
-					resolve(inspect.ExitCode);
+					resolve(inspect.ExitCode!);
 				});
 				stream.resume();
 			});
