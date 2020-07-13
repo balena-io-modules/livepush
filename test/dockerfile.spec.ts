@@ -754,6 +754,19 @@ describe('Dockerfile', () => {
 				expect(stage.actionGroups[1].restart).to.be.true;
 				expect(stage.actionGroups[2].restart).to.be.false;
 			});
+
+			it('should handle env', () => {
+				const dockerfile = new Dockerfile(dockerfileContent['livecmd-h']);
+				expect(dockerfile.generateLiveDockerfile()).to.equal(
+					[
+						'FROM build AS build',
+						'ENV UDEV=1 ANOTHER=true',
+						'#livecmd-marker=1',
+						'CMD live',
+						'COPY testfile ./\n',
+					].join('\n'),
+				);
+			});
 		});
 	});
 

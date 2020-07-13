@@ -3,6 +3,7 @@ import { CommandEntry, parse } from 'docker-file-parser';
 const LiveCommandDirective = 'dev-cmd-live';
 const RunCommandDirective = 'dev-run';
 const CopyCommandDirective = 'dev-copy';
+const EnvCommandDirective = 'dev-env';
 const EscapeDirective = 'escape';
 const InternalLiveCmdMarker = 'livecmd-marker';
 
@@ -135,6 +136,14 @@ function extractDirective(
 			return {
 				entry: {
 					name: 'LIVECOPY',
+					...common,
+				},
+				preserve: false,
+			};
+		case EnvCommandDirective:
+			return {
+				entry: {
+					name: 'LIVEENV',
 					...common,
 				},
 				preserve: false,

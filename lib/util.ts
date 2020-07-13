@@ -118,7 +118,7 @@ export async function waitForCommandCompletion(
 			const inspect = await executionContext.exec.inspect();
 			cb({
 				type: CommandExecutionArtifactType.EXIT_CODE,
-				code: inspect.ExitCode,
+				code: inspect.ExitCode!,
 			});
 			resolve();
 		});
