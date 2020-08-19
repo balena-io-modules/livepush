@@ -1,986 +1,998 @@
 - commits:
-  - author: Roman Mazur
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Roman Mazur <roman@balena.io>
-    hash: c180b489f3a537468f3347398824ca285354caaa
-    subject: Allow setting ENV variables in the live image
-  - author: Roman Mazur
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Roman Mazur <roman@balena.io>
-    hash: 7a053dd801ee5bdc8e5b0792044be611d8981a58
-    subject: Bump dockerode types dependency
-  date: "2020-07-13T11:46:04Z"
+    - subject: Add .versionbot/CHANGELOG.yml for nested changelogs
+      hash: 580a4229374fc96fc3f7aeb80e6b5a09aa958d7f
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 3.5.1
+  date: 2020-08-19T12:27:19.448Z
+- commits:
+    - author: Roman Mazur
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Roman Mazur <roman@balena.io>
+      hash: c180b489f3a537468f3347398824ca285354caaa
+      subject: Allow setting ENV variables in the live image
+    - author: Roman Mazur
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Roman Mazur <roman@balena.io>
+      hash: 7a053dd801ee5bdc8e5b0792044be611d8981a58
+      subject: Bump dockerode types dependency
+  date: '2020-07-13T11:46:04Z'
   version: 3.5.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 68ebf4a50acb2b451770f79a44e256dc14adbde0
-    subject: Update README with information about live directives
-  date: "2020-05-05T10:39:11Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 68ebf4a50acb2b451770f79a44e256dc14adbde0
+      subject: Update README with information about live directives
+  date: '2020-05-05T10:39:11Z'
   version: 3.4.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      closes: '#76'
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: f4caa2052af2a820f8bf86d202b21b2fe6680af9
-    subject: "\U0001F52D Add a file watcher which can be used by library users"
-  date: "2020-04-15T10:50:17Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        closes: '#76'
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: f4caa2052af2a820f8bf86d202b21b2fe6680af9
+      subject: "\U0001F52D Add a file watcher which can be used by library users"
+  date: '2020-04-15T10:50:17Z'
   version: 3.4.0
 - commits:
-  - author: Cameron Diver
-    body: |-
-      These are commands which are only executed when the Dockerfile
-      is built using livepush.
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 195ce7bec91a78d6c315b85448c5fa310d5cf6ba
-    subject: Add support for live RUN commands
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      closes: '#73'
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: a767f9aedd2728351eacfba93b2c61cfaaf4cc1a
-    subject: Add support for live COPY commands
-  date: "2020-04-08T16:31:22Z"
+    - author: Cameron Diver
+      body: |-
+        These are commands which are only executed when the Dockerfile
+        is built using livepush.
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 195ce7bec91a78d6c315b85448c5fa310d5cf6ba
+      subject: Add support for live RUN commands
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        closes: '#73'
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: a767f9aedd2728351eacfba93b2c61cfaaf4cc1a
+      subject: Add support for live COPY commands
+  date: '2020-04-08T16:31:22Z'
   version: 3.3.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 32ab94ab153ecf109beb352d4bed926b4eceb3cc
-    subject: Split mocha opts based on run style
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 2d8415dd4414d72f20fae08e5cce4cecf6e83653
-    subject: Fix detection of required restarts in dockerfiles with livecmds
-  date: "2020-04-04T16:46:14Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 32ab94ab153ecf109beb352d4bed926b4eceb3cc
+      subject: Split mocha opts based on run style
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 2d8415dd4414d72f20fae08e5cce4cecf6e83653
+      subject: Fix detection of required restarts in dockerfiles with livecmds
+  date: '2020-04-04T16:46:14Z'
   version: 3.2.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 500a7da633069c908b5b9da4911fddacfba2c04c
-    subject: Fix parsing of livecmds with = in them
-  date: "2020-04-02T16:50:16Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 500a7da633069c908b5b9da4911fddacfba2c04c
+      subject: Fix parsing of livecmds with = in them
+  date: '2020-04-02T16:50:16Z'
   version: 3.2.1
 - commits:
-  - author: Cameron Diver
-    body: |-
-      This is a new method of allowing Dockerfiles to specificy a command
-      that will be run when the container is started with livepush. We
-      generate a new Dockerfile with this command in mind, and replace
-      the internal representation with this but also return it so the
-      build process can use that.
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 825d8d66d142d4426251ed6082e4c7da4d62bb6c
-    subject: Add support for livecmd
-  date: "2020-03-30T17:12:48Z"
+    - author: Cameron Diver
+      body: |-
+        This is a new method of allowing Dockerfiles to specificy a command
+        that will be run when the container is started with livepush. We
+        generate a new Dockerfile with this command in mind, and replace
+        the internal representation with this but also return it so the
+        build process can use that.
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 825d8d66d142d4426251ed6082e4c7da4d62bb6c
+      subject: Add support for livecmd
+  date: '2020-03-30T17:12:48Z'
   version: 3.2.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 8bd4b803414e02b8c9d541960e4e66ec029a22c4
-    subject: Allow constructing a livepush instance using a Dockerfile instance
-  date: "2020-03-25T10:06:47Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 8bd4b803414e02b8c9d541960e4e66ec029a22c4
+      subject: Allow constructing a livepush instance using a Dockerfile instance
+  date: '2020-03-25T10:06:47Z'
   version: 3.1.0
 - commits:
-  - author: Cameron Diver
-    body: |-
-      Because of issues in docker-file-parser:
-      https://github.com/joyent/node-docker-file-parser/issues/8
-      we have to first keep track of dockerfile directives, and fold
-      them into the parsing performed by the external module.
-      We also have to keep track of the escape directive, so that we can
-      ensure we parse comments in the middle of commands correctly.
-      This work leads the way to being able to specify livepush behaviour
-      using dockerfile directives.
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 851c17569637277617ea1e7770e5978a985e11df
-    subject: Add support for Dockerfile directives
-  date: "2020-03-24T11:37:49Z"
+    - author: Cameron Diver
+      body: |-
+        Because of issues in docker-file-parser:
+        https://github.com/joyent/node-docker-file-parser/issues/8
+        we have to first keep track of dockerfile directives, and fold
+        them into the parsing performed by the external module.
+        We also have to keep track of the escape directive, so that we can
+        ensure we parse comments in the middle of commands correctly.
+        This work leads the way to being able to specify livepush behaviour
+        using dockerfile directives.
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 851c17569637277617ea1e7770e5978a985e11df
+      subject: Add support for Dockerfile directives
+  date: '2020-03-24T11:37:49Z'
   version: 3.0.3
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 300faf802322332e5db99a605c090d0b0dd1abca
-    subject: Update dockerode types and remove unnecessary any
-  date: "2020-03-24T09:00:11Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 300faf802322332e5db99a605c090d0b0dd1abca
+      subject: Update dockerode types and remove unnecessary any
+  date: '2020-03-24T09:00:11Z'
   version: 3.0.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 66a4eefa5b2b7fd4096aec9c3f62f6449c9c9fb8
-    subject: Update dependencies and remove package-lock
-  date: "2020-03-18T14:08:57Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 66a4eefa5b2b7fd4096aec9c3f62f6449c9c9fb8
+      subject: Update dependencies and remove package-lock
+  date: '2020-03-18T14:08:57Z'
   version: 3.0.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 361aa4984c225ffb42e23a942e85b4293638da99
-    subject: Upgrade typescript resin-lint and husky config
-  - author: Cameron Diver
-    body: |-
-      This allows us to extend the options passed in in a much more structure
-      fashion.
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: ce1746ccdae2402ed4691b5acfb40537e22ac705
-    subject: Accept an options object for construction
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      closes: '#41'
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: d46d0fc617564ab08e4ff13e14f0f7547729dab6
-    subject: Allow passing a skipContainerRestart option
-  date: "2020-03-09T14:41:28Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 361aa4984c225ffb42e23a942e85b4293638da99
+      subject: Upgrade typescript resin-lint and husky config
+    - author: Cameron Diver
+      body: |-
+        This allows us to extend the options passed in in a much more structure
+        fashion.
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: ce1746ccdae2402ed4691b5acfb40537e22ac705
+      subject: Accept an options object for construction
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        closes: '#41'
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: d46d0fc617564ab08e4ff13e14f0f7547729dab6
+      subject: Allow passing a skipContainerRestart option
+  date: '2020-03-09T14:41:28Z'
   version: 3.0.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 63bf2193aaac79b1230fa3de23604f2c8e5a022e
-    subject: Speed up execution by only restarting the last stage container
-  date: "2020-03-09T10:55:50Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 63bf2193aaac79b1230fa3de23604f2c8e5a022e
+      subject: Speed up execution by only restarting the last stage container
+  date: '2020-03-09T10:55:50Z'
   version: 2.1.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 145319f8fd4ef986ade19f7b3f8b2126ce4b2cc2
-    subject: Add a function which allows users to check if a change causes a livepush
-  - author: Cameron Diver
-    body: ""
-    footers:
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 9865c3445c3700679e20e8fa5b94fc7757ca3d53
-    subject: 'style: Use spread instead of concat'
-  date: "2020-03-06T11:48:40Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 145319f8fd4ef986ade19f7b3f8b2126ce4b2cc2
+      subject: Add a function which allows users to check if a change causes a livepush
+    - author: Cameron Diver
+      body: ''
+      footers:
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 9865c3445c3700679e20e8fa5b94fc7757ca3d53
+      subject: 'style: Use spread instead of concat'
+  date: '2020-03-06T11:48:40Z'
   version: 2.1.0
 - commits:
-  - author: Scott Lowe
-    body: Fixes issues with livepush changes not getting applied properly from Windows.
-    footers:
-      change-type: patch
-      resolves: '#55'
-      signed-off-by: Scott Lowe <scott@balena.io>
-    hash: 42a86b87ef957c9e17aeef4277df96c385479784
-    subject: Force POSIX format for destination (device) path operations on Windows.
-  date: "2019-12-17T14:11:37Z"
+    - author: Scott Lowe
+      body: >-
+        Fixes issues with livepush changes not getting applied properly from
+        Windows.
+      footers:
+        change-type: patch
+        resolves: '#55'
+        signed-off-by: Scott Lowe <scott@balena.io>
+      hash: 42a86b87ef957c9e17aeef4277df96c385479784
+      subject: Force POSIX format for destination (device) path operations on Windows.
+  date: '2019-12-17T14:11:37Z'
   version: 2.0.6
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 9d24e7fc6cdd77e22918e37a866fd7bd6e282a25
-    subject: Add support for passing build arguments to executions
-  date: "2019-10-22T11:42:58Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 9d24e7fc6cdd77e22918e37a866fd7bd6e282a25
+      subject: Add support for passing build arguments to executions
+  date: '2019-10-22T11:42:58Z'
   version: 2.0.5
 - commits:
-  - author: Paulo Castro
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Paulo Castro <paulo@balena.io>
-    hash: 9f50bf39e881c87d53da00dae4d1940c9f1045ab
-    subject: Add Node 12 to Circle CI tests
-  date: "2019-10-21T18:41:12Z"
+    - author: Paulo Castro
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Paulo Castro <paulo@balena.io>
+      hash: 9f50bf39e881c87d53da00dae4d1940c9f1045ab
+      subject: Add Node 12 to Circle CI tests
+  date: '2019-10-21T18:41:12Z'
   version: 2.0.4
 - commits:
-  - author: Paulo Castro
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Paulo Castro <paulo@balena.io>
-    hash: 52a69622342b1ebbc315d8b6275d3c3b04a61565
-    subject: Update husky and move it to devDependencies (package.json)
-  date: "2019-10-21T11:13:13Z"
+    - author: Paulo Castro
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Paulo Castro <paulo@balena.io>
+      hash: 52a69622342b1ebbc315d8b6275d3c3b04a61565
+      subject: Update husky and move it to devDependencies (package.json)
+  date: '2019-10-21T11:13:13Z'
   version: 2.0.3
 - commits:
-  - author: Cameron Diver
-    body: |-
-      This fixes a bug in the dockerfile parsing library that we use:
-      https://github.com/joyent/node-docker-file-parser/issues/8
-      Ideally we'd like to remove this code, so once the above issue is fixed,
-      it will be removed and updated.
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 499c99b57fa2df6c5e007cf22ec6e69461f5eae3
-    subject: Preprocess the dockerfile by removing all comments
-  date: "2019-07-01T11:15:50Z"
+    - author: Cameron Diver
+      body: |-
+        This fixes a bug in the dockerfile parsing library that we use:
+        https://github.com/joyent/node-docker-file-parser/issues/8
+        Ideally we'd like to remove this code, so once the above issue is fixed,
+        it will be removed and updated.
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 499c99b57fa2df6c5e007cf22ec6e69461f5eae3
+      subject: Preprocess the dockerfile by removing all comments
+  date: '2019-07-01T11:15:50Z'
   version: 2.0.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 7d6b544c4252131a2f2e6917e8382ee0c8417730
-    subject: Properly stop on command execute error
-  date: "2019-06-14T12:01:51Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 7d6b544c4252131a2f2e6917e8382ee0c8417730
+      subject: Properly stop on command execute error
+  date: '2019-06-14T12:01:51Z'
   version: 2.0.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 7928c0b81b2ac08b5e1a3f1d2968e83eb9ce4406
-    subject: Update documentation for major change
-  date: "2019-06-07T11:22:15Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 7928c0b81b2ac08b5e1a3f1d2968e83eb9ce4406
+      subject: Update documentation for major change
+  date: '2019-06-07T11:22:15Z'
   version: 2.0.0
 - commits:
-  - author: Cameron Diver
-    body: Also remove the LivepushAlreadyRunningError as it's no longer needed.
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: da1b97924cce5911181102ecb88e29e585ef4e1f
-    subject: Allow cancelling an in-flight livepush process
-  date: "2019-06-07T10:36:06Z"
+    - author: Cameron Diver
+      body: Also remove the LivepushAlreadyRunningError as it's no longer needed.
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: da1b97924cce5911181102ecb88e29e585ef4e1f
+      subject: Allow cancelling an in-flight livepush process
+  date: '2019-06-07T10:36:06Z'
   version: 1.3.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: a271d329cf0af5cea39018fb7dc580a808a0de46
-    subject: Ensure that the livepush process is marked as stopped on error
-  date: "2019-05-29T12:51:50Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: a271d329cf0af5cea39018fb7dc580a808a0de46
+      subject: Ensure that the livepush process is marked as stopped on error
+  date: '2019-05-29T12:51:50Z'
   version: 1.2.5
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 988ca98dfe97f604c2826486c6860703b00ea414
-    subject: Update README
-  date: "2019-05-27T10:08:12Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 988ca98dfe97f604c2826486c6860703b00ea414
+      subject: Update README
+  date: '2019-05-27T10:08:12Z'
   version: 1.2.4
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 8a3c3fd31cd82b3c95e9a9245ac0e1ed8a676646
-    subject: Export ContainerNotRunningError
-  date: "2019-05-15T12:35:06Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 8a3c3fd31cd82b3c95e9a9245ac0e1ed8a676646
+      subject: Export ContainerNotRunningError
+  date: '2019-05-15T12:35:06Z'
   version: 1.2.3
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: c825e7be9dac6aaab2dcd58cd20992df9eacd4b9
-    subject: Preserve file mode when copying from disk
-  date: "2019-05-15T11:18:56Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: c825e7be9dac6aaab2dcd58cd20992df9eacd4b9
+      subject: Preserve file mode when copying from disk
+  date: '2019-05-15T11:18:56Z'
   version: 1.2.2
 - commits:
-  - author: Cameron Diver
-    body: |-
-      Before this change, multiple livepush processes could occur
-      simultaneously on the same containers. This commit adds a lock,
-      which will not allow a livepush process to start if another one is
-      running.
-    footers:
-      change-type: patch
-      closes: '#35'
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 6482e4df54aae08c76e751cc7822108009f1740a
-    subject: Implement locking infrastructure for livepush process
-  date: "2019-05-10T12:58:16Z"
+    - author: Cameron Diver
+      body: |-
+        Before this change, multiple livepush processes could occur
+        simultaneously on the same containers. This commit adds a lock,
+        which will not allow a livepush process to start if another one is
+        running.
+      footers:
+        change-type: patch
+        closes: '#35'
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 6482e4df54aae08c76e751cc7822108009f1740a
+      subject: Implement locking infrastructure for livepush process
+  date: '2019-05-10T12:58:16Z'
   version: 1.2.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: ed2d08549c84ac77b44a152cf7367b057454d096
-    subject: Emit the command string with the return code of the command
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: bdca680f1f3c5c69421dee4672d3bdf39810ee7f
-    subject: Upgrade typescript to 3.4.3
-  date: "2019-04-30T13:47:44Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: ed2d08549c84ac77b44a152cf7367b057454d096
+      subject: Emit the command string with the return code of the command
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: bdca680f1f3c5c69421dee4672d3bdf39810ee7f
+      subject: Upgrade typescript to 3.4.3
+  date: '2019-04-30T13:47:44Z'
   version: 1.2.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 020ceebc7e77cce5f92bfaf8e562337649452123
-    subject: 'Fix: Dont remove the application container on cleanup'
-  date: "2019-04-23T10:39:09Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 020ceebc7e77cce5f92bfaf8e562337649452123
+      subject: 'Fix: Dont remove the application container on cleanup'
+  date: '2019-04-23T10:39:09Z'
   version: 1.1.3
 - commits:
-  - author: Cameron Diver
-    body: |-
-      This can cause build failures as the links can point to something which
-      doesn't exist in the later stage. We also switch to a callback interface
-      for the putArchive docker call, as errors were being masked.
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 2d53225da80781971e1b03dc25c693236cf19714
-    subject: 'fix: Filter out links when copying between stages'
-  date: "2019-04-19T10:12:46Z"
+    - author: Cameron Diver
+      body: |-
+        This can cause build failures as the links can point to something which
+        doesn't exist in the later stage. We also switch to a callback interface
+        for the putArchive docker call, as errors were being masked.
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 2d53225da80781971e1b03dc25c693236cf19714
+      subject: 'fix: Filter out links when copying between stages'
+  date: '2019-04-19T10:12:46Z'
   version: 1.1.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 8d28f964ed5911ab4fa4c9f7c93e39ae5c6e97c9
-    subject: 'fix: Preserve file permissions when performing stage copies on a file'
-  date: "2019-04-17T15:03:38Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 8d28f964ed5911ab4fa4c9f7c93e39ae5c6e97c9
+      subject: 'fix: Preserve file permissions when performing stage copies on a file'
+  date: '2019-04-17T15:03:38Z'
   version: 1.1.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 09a3ba2e01d7118b7067f9c8efa596a42f33d155
-    subject: Add helper functions for cleaning up of intermediate containers
-  date: "2019-04-17T09:32:31Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 09a3ba2e01d7118b7067f9c8efa596a42f33d155
+      subject: Add helper functions for cleaning up of intermediate containers
+  date: '2019-04-17T09:32:31Z'
   version: 1.1.0
 - commits:
-  - author: Cameron Diver
-    body: |-
-      This was causing the handler to be attached several times, in turn
-      causing an error.
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 38356dce0be87e8db5f61c3d783abb259c18320a
-    subject: Move tar stream finish emitter out of entry callback
-  date: "2019-04-17T09:11:06Z"
+    - author: Cameron Diver
+      body: |-
+        This was causing the handler to be attached several times, in turn
+        causing an error.
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 38356dce0be87e8db5f61c3d783abb259c18320a
+      subject: Move tar stream finish emitter out of entry callback
+  date: '2019-04-17T09:11:06Z'
   version: 1.0.3
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: fd965644bf9504facfbc43ac32aba03b385ae6cf
-    subject: Fix local copies when considering (sub)directories
-  date: "2019-04-17T08:59:20Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: fd965644bf9504facfbc43ac32aba03b385ae6cf
+      subject: Fix local copies when considering (sub)directories
+  date: '2019-04-17T08:59:20Z'
   version: 1.0.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 71fd3a8e2146e6de81f80a1878cf95fac34d32b2
-    subject: 'fix: Fix the destination resolution of stage copies'
-  date: "2019-04-16T14:46:02Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 71fd3a8e2146e6de81f80a1878cf95fac34d32b2
+      subject: 'fix: Fix the destination resolution of stage copies'
+  date: '2019-04-16T14:46:02Z'
   version: 1.0.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: e7935847c02d4212ab985fbc0327d67ffd38dcb4
-    subject: Add ts-node and watch and fast test scripts to package.json
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: major
-      closes: '#8'
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: c85f9cace53cd1e79366a01daf382bff0a52920f
-    subject: Completely refactor dockerfile parsing for multistage dockerfiles
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: edeac0f0f2a129b73c77be7aa34b51a8e7ec0389
-    subject: Add mocha sourcemap support
-  - author: CameronDiver
-    body: Upgrades to Dockerfile parsing, for multistage support
-    hash: f9e6b10a48004c32ea71122823a049d0823706e0
-    subject: 'Merge pull request #24 from balena-io-modules/multistage-dockerfile'
-  - author: Cameron Diver
-    body: |-
-      This module is not necessary, as other node modules exist which make
-      this much easier and more cross-platform.
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 1ea9b41430f61c878f26f8c1daf197851fa03968
-    subject: 'refactor: Remove filewatcher module'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: e075a3265275a37243a82927647db981d9d12854
-    subject: Upgrade dockerode types
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: c9b1ca137440790bd63302f25f8180cf54525a13
-    subject: 'fix: Use mocha opts file but remove files from opts'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: bd91e961ed685a83dd32f903ed20d189111e5c0d
-    subject: Add extra action group trigger checking helpers
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: d8589e0967d48a3b6b25b63c83395fbc281c8f2d
-    subject: Export StagedActionGroups interface from Dockerfile module
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: ccb973a47610cd79ca8522847663901fa856abaf
-    subject: Add more typed errors
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 51c07efcf4bb016eed1dc04668cdcf2a8635bace
-    subject: 'fix: Fix grouping of shared stage copies'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 2cf9def440261217a401384d5aa7bf084b5463c3
-    subject: Implement multistage container command and file handling
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 55fa94165b673c7c104f4202904dc34f59e67b24
-    subject: Add main livepush module, which handles distributing tasks
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 31e5e3422624bd669cfe550ef2b2f22f253d5a2f
-    subject: Dont use expansion in test copy to avoid circle errors
-  - author: Cameron Diver
-    body: ""
-    hash: 30215f510059b4101acebc1ec3be9ded039af4ed
-    subject: livepush
-  - author: CameronDiver
-    body: Container interaction upgrades for multistage support
-    hash: 36d08ae07b34f9011b8d70be94622ed64bc0975a
-    subject: 'Merge pull request #25 from balena-io-modules/multistage-container'
-  - author: Cameron Diver
-    body: |-
-      This module is not necessary, as other node modules exist which make
-      this much easier and more cross-platform.
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 1ea9b41430f61c878f26f8c1daf197851fa03968
-    subject: 'refactor: Remove filewatcher module'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: e075a3265275a37243a82927647db981d9d12854
-    subject: Upgrade dockerode types
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: c9b1ca137440790bd63302f25f8180cf54525a13
-    subject: 'fix: Use mocha opts file but remove files from opts'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: bd91e961ed685a83dd32f903ed20d189111e5c0d
-    subject: Add extra action group trigger checking helpers
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: d8589e0967d48a3b6b25b63c83395fbc281c8f2d
-    subject: Export StagedActionGroups interface from Dockerfile module
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: ccb973a47610cd79ca8522847663901fa856abaf
-    subject: Add more typed errors
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 51c07efcf4bb016eed1dc04668cdcf2a8635bace
-    subject: 'fix: Fix grouping of shared stage copies'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 2cf9def440261217a401384d5aa7bf084b5463c3
-    subject: Implement multistage container command and file handling
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 55fa94165b673c7c104f4202904dc34f59e67b24
-    subject: Add main livepush module, which handles distributing tasks
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 31e5e3422624bd669cfe550ef2b2f22f253d5a2f
-    subject: Dont use expansion in test copy to avoid circle errors
-  - author: Cameron Diver
-    body: ""
-    hash: 30215f510059b4101acebc1ec3be9ded039af4ed
-    subject: livepush
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: e7935847c02d4212ab985fbc0327d67ffd38dcb4
-    subject: Add ts-node and watch and fast test scripts to package.json
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: major
-      closes: '#8'
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: c85f9cace53cd1e79366a01daf382bff0a52920f
-    subject: Completely refactor dockerfile parsing for multistage dockerfiles
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: edeac0f0f2a129b73c77be7aa34b51a8e7ec0389
-    subject: Add mocha sourcemap support
-  date: "2019-04-12T12:55:35Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: e7935847c02d4212ab985fbc0327d67ffd38dcb4
+      subject: Add ts-node and watch and fast test scripts to package.json
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: major
+        closes: '#8'
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: c85f9cace53cd1e79366a01daf382bff0a52920f
+      subject: Completely refactor dockerfile parsing for multistage dockerfiles
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: edeac0f0f2a129b73c77be7aa34b51a8e7ec0389
+      subject: Add mocha sourcemap support
+    - author: CameronDiver
+      body: 'Upgrades to Dockerfile parsing, for multistage support'
+      hash: f9e6b10a48004c32ea71122823a049d0823706e0
+      subject: 'Merge pull request #24 from balena-io-modules/multistage-dockerfile'
+    - author: Cameron Diver
+      body: |-
+        This module is not necessary, as other node modules exist which make
+        this much easier and more cross-platform.
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 1ea9b41430f61c878f26f8c1daf197851fa03968
+      subject: 'refactor: Remove filewatcher module'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: e075a3265275a37243a82927647db981d9d12854
+      subject: Upgrade dockerode types
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: c9b1ca137440790bd63302f25f8180cf54525a13
+      subject: 'fix: Use mocha opts file but remove files from opts'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: bd91e961ed685a83dd32f903ed20d189111e5c0d
+      subject: Add extra action group trigger checking helpers
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: d8589e0967d48a3b6b25b63c83395fbc281c8f2d
+      subject: Export StagedActionGroups interface from Dockerfile module
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: ccb973a47610cd79ca8522847663901fa856abaf
+      subject: Add more typed errors
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 51c07efcf4bb016eed1dc04668cdcf2a8635bace
+      subject: 'fix: Fix grouping of shared stage copies'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 2cf9def440261217a401384d5aa7bf084b5463c3
+      subject: Implement multistage container command and file handling
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 55fa94165b673c7c104f4202904dc34f59e67b24
+      subject: 'Add main livepush module, which handles distributing tasks'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 31e5e3422624bd669cfe550ef2b2f22f253d5a2f
+      subject: Dont use expansion in test copy to avoid circle errors
+    - author: Cameron Diver
+      body: ''
+      hash: 30215f510059b4101acebc1ec3be9ded039af4ed
+      subject: livepush
+    - author: CameronDiver
+      body: Container interaction upgrades for multistage support
+      hash: 36d08ae07b34f9011b8d70be94622ed64bc0975a
+      subject: 'Merge pull request #25 from balena-io-modules/multistage-container'
+    - author: Cameron Diver
+      body: |-
+        This module is not necessary, as other node modules exist which make
+        this much easier and more cross-platform.
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 1ea9b41430f61c878f26f8c1daf197851fa03968
+      subject: 'refactor: Remove filewatcher module'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: e075a3265275a37243a82927647db981d9d12854
+      subject: Upgrade dockerode types
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: c9b1ca137440790bd63302f25f8180cf54525a13
+      subject: 'fix: Use mocha opts file but remove files from opts'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: bd91e961ed685a83dd32f903ed20d189111e5c0d
+      subject: Add extra action group trigger checking helpers
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: d8589e0967d48a3b6b25b63c83395fbc281c8f2d
+      subject: Export StagedActionGroups interface from Dockerfile module
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: ccb973a47610cd79ca8522847663901fa856abaf
+      subject: Add more typed errors
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 51c07efcf4bb016eed1dc04668cdcf2a8635bace
+      subject: 'fix: Fix grouping of shared stage copies'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 2cf9def440261217a401384d5aa7bf084b5463c3
+      subject: Implement multistage container command and file handling
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 55fa94165b673c7c104f4202904dc34f59e67b24
+      subject: 'Add main livepush module, which handles distributing tasks'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 31e5e3422624bd669cfe550ef2b2f22f253d5a2f
+      subject: Dont use expansion in test copy to avoid circle errors
+    - author: Cameron Diver
+      body: ''
+      hash: 30215f510059b4101acebc1ec3be9ded039af4ed
+      subject: livepush
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: e7935847c02d4212ab985fbc0327d67ffd38dcb4
+      subject: Add ts-node and watch and fast test scripts to package.json
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: major
+        closes: '#8'
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: c85f9cace53cd1e79366a01daf382bff0a52920f
+      subject: Completely refactor dockerfile parsing for multistage dockerfiles
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: edeac0f0f2a129b73c77be7aa34b51a8e7ec0389
+      subject: Add mocha sourcemap support
+  date: '2019-04-12T12:55:35Z'
   version: 1.0.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: fb73f441b6dfed980cc7abeb1e770744b8a4a182
-    subject: 'misc: Add types entry to package.json'
-  date: "2019-01-14T14:11:02Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: fb73f441b6dfed980cc7abeb1e770744b8a4a182
+      subject: 'misc: Add types entry to package.json'
+  date: '2019-01-14T14:11:02Z'
   version: 0.9.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 1316dc49c6554ce62f3ba24b7dad6d15ba8b0cba
-    subject: 'fix: Fix path reporting from file watcher'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 9dea074912328dbbcc734486ca7ba9699d1edd3b
-    subject: 'misc: Add coverage files to gitignore'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: e39deea55104bd2272ddbc42b0941dbcd9ce9089
-    subject: Get affected files from Dockerfile module, to support globs
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 521f75dfdac7855f2634cf92a409231e7991a603
-    subject: 'fix: Fix support for Dockerfiles with consecutive copies'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: e8c66b5f106ea1c4d85c76d5d8b4ff9db6f0b42d
-    subject: 'Dockerfile: Better support adding files to directories'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: a761f124adae284555c57ce32a093833878e7895
-    subject: 'Container: Make container a typed event-emitter for execution events'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 22f2aa9d6ee87e84f2cb60ac4bbbec98bc47fbee
-    subject: 'Fix: Actually execute commands when livepushing'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: dda923f8108c5e2a437ddeed123970ae684b1fef
-    subject: 'Container: Perform fast restart by explicitly killing'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 089bfc29e75a5fe2225bd7eec732c1689efab042
-    subject: 'misc: Update package-lock'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 103a891274871223684b7e3fb38986b511e4e53f
-    subject: 'fix: Run dockerfile commands sequentially'
-  date: "2019-01-11T10:27:24Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 1316dc49c6554ce62f3ba24b7dad6d15ba8b0cba
+      subject: 'fix: Fix path reporting from file watcher'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 9dea074912328dbbcc734486ca7ba9699d1edd3b
+      subject: 'misc: Add coverage files to gitignore'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: e39deea55104bd2272ddbc42b0941dbcd9ce9089
+      subject: 'Get affected files from Dockerfile module, to support globs'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 521f75dfdac7855f2634cf92a409231e7991a603
+      subject: 'fix: Fix support for Dockerfiles with consecutive copies'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: e8c66b5f106ea1c4d85c76d5d8b4ff9db6f0b42d
+      subject: 'Dockerfile: Better support adding files to directories'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: a761f124adae284555c57ce32a093833878e7895
+      subject: 'Container: Make container a typed event-emitter for execution events'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 22f2aa9d6ee87e84f2cb60ac4bbbec98bc47fbee
+      subject: 'Fix: Actually execute commands when livepushing'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: dda923f8108c5e2a437ddeed123970ae684b1fef
+      subject: 'Container: Perform fast restart by explicitly killing'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 089bfc29e75a5fe2225bd7eec732c1689efab042
+      subject: 'misc: Update package-lock'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 103a891274871223684b7e3fb38986b511e4e53f
+      subject: 'fix: Run dockerfile commands sequentially'
+  date: '2019-01-11T10:27:24Z'
   version: 0.8.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 1ccd5dbddf222ef5f4dc6d58066a71c53416864b
-    subject: Add FSWatcher module
-  date: "2019-01-02T10:34:01Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 1ccd5dbddf222ef5f4dc6d58066a71c53416864b
+      subject: Add FSWatcher module
+  date: '2019-01-02T10:34:01Z'
   version: 0.7.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 41204c6005bfcbc2217bb7d283036b11089e5b5e
-    subject: Export Container objects
-  date: "2018-12-20T18:14:16Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 41204c6005bfcbc2217bb7d283036b11089e5b5e
+      subject: Export Container objects
+  date: '2018-12-20T18:14:16Z'
   version: 0.6.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: cc60f8d0be221391bd292009415b877f5b835ac6
-    subject: Add coverage to tests
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: dfe76acbfaef7e16e31dc9f293e9f4fa0612e4ef
-    subject: Add container interaction utilities
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 05b7cc6e63d04a8f11d25f0b5879d4ba434bfb2f
-    subject: Add circleci configuration
-  - author: Cameron Diver
-    body: ""
-    footers:
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 4d58add49fb7bc0e524ddabe3202b6754a23122f
-    subject: 'deps: Update package-lock'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 3db2fac528e605874cf13c65e98bd2b235a366de
-    subject: Make changed files a class, with getters for combinations
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 37f94b5824b1a394b0b962c5ceebee3bdb3236fa
-    subject: Make some container initialisation vars readonly
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 5d8e282ec3f206707e595fde05cb56fe5c4c4611
-    subject: Add files to tar packs using streams
-  date: "2018-11-27T13:33:57Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: cc60f8d0be221391bd292009415b877f5b835ac6
+      subject: Add coverage to tests
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: dfe76acbfaef7e16e31dc9f293e9f4fa0612e4ef
+      subject: Add container interaction utilities
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 05b7cc6e63d04a8f11d25f0b5879d4ba434bfb2f
+      subject: Add circleci configuration
+    - author: Cameron Diver
+      body: ''
+      footers:
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 4d58add49fb7bc0e524ddabe3202b6754a23122f
+      subject: 'deps: Update package-lock'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 3db2fac528e605874cf13c65e98bd2b235a366de
+      subject: 'Make changed files a class, with getters for combinations'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 37f94b5824b1a394b0b962c5ceebee3bdb3236fa
+      subject: Make some container initialisation vars readonly
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 5d8e282ec3f206707e595fde05cb56fe5c4c4611
+      subject: Add files to tar packs using streams
+  date: '2018-11-27T13:33:57Z'
   version: 0.5.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: a0881af11205823012b013b782887ad3062c540b
-    subject: Add mocha.opts file
-  - author: Cameron Diver
-    body: ""
-    footers:
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 822e11c892865d37583f8fa3c15be7495ffb338f
-    subject: Run prettier on previously implemented modules
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: fe4c8f5d00b51d8c0d1d2d3dfb1c202f7df90da3
-    subject: 'fix: Handle the case where a COPY precedes a CMD without commands'
-  - author: Cameron Diver
-    body: ""
-    footers:
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 04dd5edfa21cb196098eb7a2a3b73d7c2cd9c9ee
-    subject: Make fileMatchesForActionGroup static
-  date: "2018-11-19T18:39:43Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: a0881af11205823012b013b782887ad3062c540b
+      subject: Add mocha.opts file
+    - author: Cameron Diver
+      body: ''
+      footers:
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 822e11c892865d37583f8fa3c15be7495ffb338f
+      subject: Run prettier on previously implemented modules
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: fe4c8f5d00b51d8c0d1d2d3dfb1c202f7df90da3
+      subject: 'fix: Handle the case where a COPY precedes a CMD without commands'
+    - author: Cameron Diver
+      body: ''
+      footers:
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 04dd5edfa21cb196098eb7a2a3b73d7c2cd9c9ee
+      subject: Make fileMatchesForActionGroup static
+  date: '2018-11-19T18:39:43Z'
   version: 0.4.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: a35e9094560a16c2a644ce2d8628f50f5d505faf
-    subject: Add index.ts and set it as the library entrypoint
-  date: "2018-11-08T12:18:38Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: a35e9094560a16c2a644ce2d8628f50f5d505faf
+      subject: Add index.ts and set it as the library entrypoint
+  date: '2018-11-08T12:18:38Z'
   version: 0.3.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: c485978d55e5550e144dff8b8e956fc5977d677d
-    subject: Setup linting infrastructure and add package lock
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 29ada543b48cadd31384c68a99570c6e523baae8
-    subject: 'Dockerfile: Add dockerfile handling code'
-  date: "2018-11-08T11:52:24Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: c485978d55e5550e144dff8b8e956fc5977d677d
+      subject: Setup linting infrastructure and add package lock
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 29ada543b48cadd31384c68a99570c6e523baae8
+      subject: 'Dockerfile: Add dockerfile handling code'
+  date: '2018-11-08T11:52:24Z'
   version: 0.2.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: dec92c3fdc9fc8be5c7c6537b0b1d73141c01075
-    subject: Make copies more reliable by checking container fs
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 677f91b0646e11fdb15b21824ec5fc7a041d4ed8
-    subject: Memoize conatiner filesystem introspection calls
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: bac4178c07a7c6563038f7458f18743d13e50037
-    subject: Check host filesystem when deciding how to copy files
-  - author: Cameron Diver
-    body: ""
-    footers:
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: d6f9f69c49a071794a6bd4b8dc64e7219c38fece
-    subject: Use basename instead of manually detecting file path
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 154c343ad6221f105a32a073b4a2720bc326b4fe
-    subject: Add sourcemap support to istanbul coverage
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 5784919b95fec2eb1639fd5a9820a27dc053dad9
-    subject: Add another copy test
-  date: "2019-02-28T13:38:32Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: dec92c3fdc9fc8be5c7c6537b0b1d73141c01075
+      subject: Make copies more reliable by checking container fs
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 677f91b0646e11fdb15b21824ec5fc7a041d4ed8
+      subject: Memoize conatiner filesystem introspection calls
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: bac4178c07a7c6563038f7458f18743d13e50037
+      subject: Check host filesystem when deciding how to copy files
+    - author: Cameron Diver
+      body: ''
+      footers:
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: d6f9f69c49a071794a6bd4b8dc64e7219c38fece
+      subject: Use basename instead of manually detecting file path
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 154c343ad6221f105a32a073b4a2720bc326b4fe
+      subject: Add sourcemap support to istanbul coverage
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 5784919b95fec2eb1639fd5a9820a27dc053dad9
+      subject: Add another copy test
+  date: '2019-02-28T13:38:32Z'
   version: 0.14.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: cb4e13a98eba9fa65cbcc295fda853c0fba3e650
-    subject: Use buffer add when generating copy tarfile
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: c42d0a81a9279ccb4e490373607b0914d7ad6a0b
-    subject: Correctly consider subdirectories when copying files
-  - author: Cameron Diver
-    body: ""
-    footers:
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: cf3e2ecf76368c7398356f474d20707b225006ba
-    subject: Fix node6 support
-  date: "2019-02-27T14:24:37Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: cb4e13a98eba9fa65cbcc295fda853c0fba3e650
+      subject: Use buffer add when generating copy tarfile
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: c42d0a81a9279ccb4e490373607b0914d7ad6a0b
+      subject: Correctly consider subdirectories when copying files
+    - author: Cameron Diver
+      body: ''
+      footers:
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: cf3e2ecf76368c7398356f474d20707b225006ba
+      subject: Fix node6 support
+  date: '2019-02-27T14:24:37Z'
   version: 0.13.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 0c1fe34de1d7bd87706dfc642b562eb6be7d562a
-    subject: 'fix: Fix action group trigger detection'
-  date: "2019-01-16T14:07:21Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 0c1fe34de1d7bd87706dfc642b562eb6be7d562a
+      subject: 'fix: Fix action group trigger detection'
+  date: '2019-01-16T14:07:21Z'
   version: 0.13.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      closes: '#17'
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 750c112b1c4aa78823d384f3b21c963c8dffd68b
-    subject: 'commands: Run commands through subshell'
-  date: "2019-01-15T16:13:16Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        closes: '#17'
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 750c112b1c4aa78823d384f3b21c963c8dffd68b
+      subject: 'commands: Run commands through subshell'
+  date: '2019-01-15T16:13:16Z'
   version: 0.13.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: e2bcb05285e6659879de900cd8ee0e1722bcd252
-    subject: Detect local directory copies
-  date: "2019-01-15T11:29:27Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: e2bcb05285e6659879de900cd8ee0e1722bcd252
+      subject: Detect local directory copies
+  date: '2019-01-15T11:29:27Z'
   version: 0.12.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 13d61b6e654d12ea7ffb3f2124bba23e18e927d3
-    subject: Export DockerfileActionGroup to lib users
-  date: "2019-01-14T16:32:52Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 13d61b6e654d12ea7ffb3f2124bba23e18e927d3
+      subject: Export DockerfileActionGroup to lib users
+  date: '2019-01-14T16:32:52Z'
   version: 0.12.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 41751457ea6d58483e9ff56fb76bbdbf00be7843
-    subject: 'events: Emit execute events for listeners'
-  date: "2019-01-14T16:08:37Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 41751457ea6d58483e9ff56fb76bbdbf00be7843
+      subject: 'events: Emit execute events for listeners'
+  date: '2019-01-14T16:08:37Z'
   version: 0.11.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 56a1b03de2b38e4fb67fd7e1a32ec7ad4833305c
-    subject: Add prettier and resin-lint
-  date: "2018-11-06T12:00:10Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 56a1b03de2b38e4fb67fd7e1a32ec7ad4833305c
+      subject: Add prettier and resin-lint
+  date: '2018-11-06T12:00:10Z'
   version: 0.1.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@balena.io>
-    hash: 3285f5c859909c1804cb2ab3b82f0e11a07e2fd6
-    subject: 'refactor: Type the events provided by FSMonitor'
-  date: "2019-01-14T14:53:08Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@balena.io>
+      hash: 3285f5c859909c1804cb2ab3b82f0e11a07e2fd6
+      subject: 'refactor: Type the events provided by FSMonitor'
+  date: '2019-01-14T14:53:08Z'
   version: 0.10.0
