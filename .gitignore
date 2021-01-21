@@ -3,4 +3,3 @@ build
 coverage
 .nyc*
 .idea
-package-lock.json
