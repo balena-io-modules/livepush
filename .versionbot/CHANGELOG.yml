@@ -1,4 +1,18 @@
 - commits:
+    - subject: Update dependencies
+      hash: ff9ce0457edf1366219604a2ba1a02fb4cd8926e
+      body: |
+        Still need to look into `typescript`, `husky`, and `mocha` as upgrading
+        them cause issues.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Carol Schulze <carol@balena.io>
+        signed-off-by: Carol Schulze <carol@balena.io>
+      author: Carol Schulze
+  version: 3.5.2
+  date: 2021-09-18T17:20:05.896Z
+- commits:
     - subject: Add .versionbot/CHANGELOG.yml for nested changelogs
       hash: 580a4229374fc96fc3f7aeb80e6b5a09aa958d7f
       body: ''
