@@ -25,7 +25,7 @@ import { DockerfileParseError, UnsupportedError } from '../lib';
 import { isChildPath, StageDependentActionGroup } from '../lib/action-group';
 import Dockerfile from '../lib/dockerfile';
 
-const dockerfileContent: Dictionary<Buffer> = {};
+const dockerfileContent: Record<string, Buffer> = {};
 
 describe('Dockerfile', () => {
 	before(async () => {

@@ -328,7 +328,9 @@ export class Dockerfile {
 		);
 	}
 
-	private static removeFlags(args: string[]): [Dictionary<string>, string[]] {
+	private static removeFlags(
+		args: string[],
+	): [Record<string, string>, string[]] {
 		const [unparsedFlags, nonFlags] = _.partition(args, a =>
 			_.startsWith(a, '--'),
 		);

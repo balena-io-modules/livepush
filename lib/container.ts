@@ -76,7 +76,7 @@ export class Container extends (EventEmitter as {
 	new (): ContainerEventEmitter;
 }) {
 	private cancelled: boolean = false;
-	private buildArguments: Dictionary<string> = {};
+	private buildArguments: Record<string, string> = {};
 
 	private skipRestart = false;
 
@@ -242,7 +242,7 @@ export class Container extends (EventEmitter as {
 		this.cancelled = cancelled;
 	}
 
-	public setBuildArguments(buildArgs: Dictionary<string>): void {
+	public setBuildArguments(buildArgs: Record<string, string>): void {
 		this.buildArguments = buildArgs;
 	}
 
@@ -400,7 +400,7 @@ export class Container extends (EventEmitter as {
 	public static generateContainerCommand(command: string): string[] {
 		return shell.parse(escape(['/bin/sh', '-c', command])).map(entry => {
 			if (!_.isString(entry)) {
-				const entryObj: Dictionary<string> = entry;
+				const entryObj: Record<string, string> = entry;
 				if (entryObj.op != null) {
 					if (entryObj.op === 'glob') {
 						return entryObj.pattern;

@@ -175,7 +175,7 @@ export class Livepush extends (EventEmitter as {
 		});
 	}
 
-	public setBuildArgs(buildArgs: Dictionary<string>): void {
+	public setBuildArgs(buildArgs: Record<string, string>): void {
 		_.each(this.containers, container =>
 			container.setBuildArguments(buildArgs),
 		);
