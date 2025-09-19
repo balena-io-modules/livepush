@@ -1,4 +1,0 @@
---timeout 600000
---exit
---require source-map-support/register
-build/test/*.js
