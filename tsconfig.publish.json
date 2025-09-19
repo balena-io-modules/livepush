@@ -6,8 +6,10 @@
 		"noUnusedParameters": true,
 		"strictNullChecks": true,
 		"removeComments": true,
+		"skipLibCheck": true
 	},
-	"exclude": [
-		"test"
+	"include": [
+		"typings/**/*.ts",
+		"lib/**/*.ts"
 	]
 }

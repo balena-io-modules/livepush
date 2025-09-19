@@ -40,7 +40,7 @@ async function copyDirToStage(
 	const extract = tar.extract();
 	const pack = tar.pack();
 
-	await new Promise((resolve, reject) => {
+	await new Promise<void>((resolve, reject) => {
 		extract.on(
 			'entry',
 			async (headers: tar.Headers, stream: Readable, next: () => void) => {
@@ -123,7 +123,7 @@ async function copyFileToStage(
 	destination = destination.replace('/', '');
 
 	const pack = tar.pack();
-	await new Promise((resolve, reject) => {
+	await new Promise<void>((resolve, reject) => {
 		pack.entry(
 			{ name: destination, mode: parseInt(permissions, 8) },
 			buf,

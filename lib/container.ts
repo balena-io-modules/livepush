@@ -418,7 +418,7 @@ export class Container extends (EventEmitter as {
 		tarStream: Stream.Readable,
 		destination: string,
 	): Promise<void> {
-		await new Promise((resolve, reject) => {
+		await new Promise<void>((resolve, reject) => {
 			// We use the callback interface here, as the
 			// dockerode promise interface somehow loses any
 			// errors which occur

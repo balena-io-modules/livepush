@@ -6,6 +6,12 @@
 		"preserveConstEnums": true,
 		"declaration": true,
 		"pretty": true,
-		"sourceMap": true
-	}
+		"sourceMap": true,
+		"skipLibCheck": true
+	},
+	"include": [
+		"typings/**/*.ts",
+		"lib/**/*.ts",
+		"test/**/*.ts"
+	]
 }

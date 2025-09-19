@@ -613,7 +613,7 @@ describe('Containers', () => {
 			this.timeout(15000);
 
 			const getEventStreamPromise = (restartWanted: boolean) => {
-				return new Promise(async (resolve, reject) => {
+				return new Promise<void>(async (resolve, reject) => {
 					// Set up an event stream
 					const eventStream = await docker.getEvents({
 						filters: {
