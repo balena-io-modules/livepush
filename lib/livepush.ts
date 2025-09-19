@@ -1,9 +1,9 @@
-import { delay } from 'bluebird';
 import * as Dockerode from 'dockerode';
 import { EventEmitter } from 'events';
 import _ from 'lodash';
 import StrictEventEmitter from 'strict-event-emitter-types';
 
+import { setTimeout } from 'node:timers/promises';
 import Container, { CommandOutput, StageContainers } from './container';
 import Dockerfile from './dockerfile';
 import { InvalidArgumentError } from './errors';
@@ -113,7 +113,7 @@ export class Livepush extends (EventEmitter as {
 		if (this.livepushRunning) {
 			await this.cancel();
 			while (this.cancelRun) {
-				await delay(1000);
+				await setTimeout(1000);
 			}
 			_.each(this.containers, container => {
 				container.markCancelled(false);

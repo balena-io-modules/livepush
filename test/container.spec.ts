@@ -3,7 +3,6 @@ import 'mocha';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-import * as Bluebird from 'bluebird';
 import * as Docker from 'dockerode';
 import * as _ from 'lodash';
 import { fs } from 'mz';
@@ -128,9 +127,15 @@ describe('Containers', () => {
 			console.log('  Pulling necessary images...');
 			// Pull down the necessary images
 			const stream = await docker.pull(image, {});
-			await Bluebird.fromCallback(cb =>
-				docker.modem.followProgress(stream, cb),
-			);
+			await new Promise((resolve, reject) => {
+				docker.modem.followProgress(stream, (error, result) => {
+					if (error != null) {
+						reject(error);
+						return;
+					}
+					resolve(result);
+				});
+			});
 		});
 
 		beforeEach(async () => {

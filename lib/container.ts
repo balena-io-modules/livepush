@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import Bluebird from 'bluebird';
 import * as Docker from 'dockerode';
 import { EventEmitter } from 'events';
 import _ from 'lodash';
@@ -309,10 +308,12 @@ export class Container extends (EventEmitter as {
 		// a directory has been deleted). This could cause a
 		// divergence in expected and actual runtime, so it
 		// should be handled
-		await Bluebird.map(files, async f => {
-			const command = ['/bin/rm', '-f', f];
-			await this.executeCommandDetached(command);
-		});
+		await Promise.all(
+			files.map(async f => {
+				const command = ['/bin/rm', '-f', f];
+				await this.executeCommandDetached(command);
+			}),
+		);
 	}
 
 	private async getLocalOperations(
