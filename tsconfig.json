@@ -3,6 +3,7 @@
 		"module": "commonjs",
 		"target": "es6",
 		"outDir": "build",
+		"esModuleInterop": true,
 		"preserveConstEnums": true,
 		"declaration": true,
 		"pretty": true,

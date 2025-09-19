@@ -11,13 +11,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as Bluebird from 'bluebird';
+import Bluebird from 'bluebird';
 import * as Docker from 'dockerode';
 import { EventEmitter } from 'events';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { fs } from 'mz';
 import * as Path from 'path';
-import * as escape from 'shell-escape';
+import escape from 'shell-escape';
 import * as shell from 'shell-quote';
 import * as Stream from 'stream';
 import StrictEventEmitter from 'strict-event-emitter-types';

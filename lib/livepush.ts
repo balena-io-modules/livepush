@@ -1,7 +1,7 @@
 import { delay } from 'bluebird';
 import * as Dockerode from 'dockerode';
 import { EventEmitter } from 'events';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import StrictEventEmitter from 'strict-event-emitter-types';
 
 import Container, { CommandOutput, StageContainers } from './container';

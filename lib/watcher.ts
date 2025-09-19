@@ -1,5 +1,5 @@
 import * as chokidar from 'chokidar';
-import * as _ from 'lodash';
+import _ from 'lodash';
 
 import Livepush from './livepush';
 
