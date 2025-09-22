@@ -4,6 +4,11 @@
   "description": "Update your containers live!",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "homepage": "https://github.com/balena-io-modules/livepush",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/balena-io-modules/livepush.git"
+  },
   "directories": {
     "lib": "lib"
   },
@@ -19,7 +24,7 @@
     "test:copy": "cp -r test/contexts build/test/; cp -r test/dockerfiles build/test/",
     "test:fast": "mocha --config test/.mocharc.js"
   },
-  "author": "Cameron Diver <cameron@balena.io>",
+  "author": "Balena Ltd. <hello@balena.io>",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/bluebird": "^3.5.30",
