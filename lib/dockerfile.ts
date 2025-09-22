@@ -10,7 +10,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as _ from 'lodash';
+import _ from 'lodash';
 import * as path from 'path';
 
 import ActionGroup from './action-group';
@@ -328,7 +328,9 @@ export class Dockerfile {
 		);
 	}
 
-	private static removeFlags(args: string[]): [Dictionary<string>, string[]] {
+	private static removeFlags(
+		args: string[],
+	): [Record<string, string>, string[]] {
 		const [unparsedFlags, nonFlags] = _.partition(args, a =>
 			_.startsWith(a, '--'),
 		);

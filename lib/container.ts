@@ -11,13 +11,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as Bluebird from 'bluebird';
 import * as Docker from 'dockerode';
 import { EventEmitter } from 'events';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { fs } from 'mz';
 import * as Path from 'path';
-import * as escape from 'shell-escape';
+import escape from 'shell-escape';
 import * as shell from 'shell-quote';
 import * as Stream from 'stream';
 import StrictEventEmitter from 'strict-event-emitter-types';
@@ -76,7 +75,7 @@ export class Container extends (EventEmitter as {
 	new (): ContainerEventEmitter;
 }) {
 	private cancelled: boolean = false;
-	private buildArguments: Dictionary<string> = {};
+	private buildArguments: Record<string, string> = {};
 
 	private skipRestart = false;
 
@@ -242,7 +241,7 @@ export class Container extends (EventEmitter as {
 		this.cancelled = cancelled;
 	}
 
-	public setBuildArguments(buildArgs: Dictionary<string>): void {
+	public setBuildArguments(buildArgs: Record<string, string>): void {
 		this.buildArguments = buildArgs;
 	}
 
@@ -309,10 +308,12 @@ export class Container extends (EventEmitter as {
 		// a directory has been deleted). This could cause a
 		// divergence in expected and actual runtime, so it
 		// should be handled
-		await Bluebird.map(files, async f => {
-			const command = ['/bin/rm', '-f', f];
-			await this.executeCommandDetached(command);
-		});
+		await Promise.all(
+			files.map(async f => {
+				const command = ['/bin/rm', '-f', f];
+				await this.executeCommandDetached(command);
+			}),
+		);
 	}
 
 	private async getLocalOperations(
@@ -400,7 +401,7 @@ export class Container extends (EventEmitter as {
 	public static generateContainerCommand(command: string): string[] {
 		return shell.parse(escape(['/bin/sh', '-c', command])).map(entry => {
 			if (!_.isString(entry)) {
-				const entryObj: Dictionary<string> = entry;
+				const entryObj: Record<string, string> = entry;
 				if (entryObj.op != null) {
 					if (entryObj.op === 'glob') {
 						return entryObj.pattern;
@@ -418,7 +419,7 @@ export class Container extends (EventEmitter as {
 		tarStream: Stream.Readable,
 		destination: string,
 	): Promise<void> {
-		await new Promise((resolve, reject) => {
+		await new Promise<void>((resolve, reject) => {
 			// We use the callback interface here, as the
 			// dockerode promise interface somehow loses any
 			// errors which occur

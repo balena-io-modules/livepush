@@ -4,6 +4,11 @@
   "description": "Update your containers live!",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "homepage": "https://github.com/balena-io-modules/livepush",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/balena-io-modules/livepush.git"
+  },
   "directories": {
     "lib": "lib"
   },
@@ -15,22 +20,20 @@
     "build": "npm run clean && tsc --project tsconfig.publish.json",
     "build:test": "npm run clean && tsc --project . && npm run test:copy",
     "test": "npm run lint && npm run test:cov",
-    "test:cov": "npm run build:test && nyc mocha --opts test/mocha.prod.opts build/test/*.spec.js",
+    "test:cov": "npm run build:test && nyc mocha --config test/.mocharc.prod.js",
     "test:copy": "cp -r test/contexts build/test/; cp -r test/dockerfiles build/test/",
-    "test:fast": "TS_NODE_FILES=true npx mocha",
-    "test:watch": "TS_NODE_FILES=true npx mocha --watch --watch-extensions ts"
+    "test:fast": "mocha --config test/.mocharc.js"
   },
-  "author": "Cameron Diver <cameron@balena.io>",
+  "author": "Balena Ltd. <hello@balena.io>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/bluebird": "^3.5.30",
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
     "@types/dockerode": "^2.5.34",
     "@types/lodash": "^4.14.149",
     "@types/md5": "^2.1.32",
     "@types/minimatch": "^3.0.3",
-    "@types/mocha": "^5.2.5",
+    "@types/mocha": "^10.0.1",
     "@types/mz": "0.0.32",
     "@types/shell-escape": "^0.2.0",
     "@types/shell-quote": "^1.6.0",
@@ -41,17 +44,17 @@
     "chai-as-promised": "^7.1.1",
     "husky": "^3.1.0",
     "lint-staged": "^8.2.1",
-    "mocha": "^5.2.0",
+    "mocha": "^11.0.0",
     "nyc": "^13.1.0",
     "require-npm4-to-publish": "^1.0.0",
     "resin-lint": "^3.3.1",
     "sinon": "^6.3.5",
     "source-map-support": "^0.5.16",
     "tar-fs": "^2.0.0",
-    "typescript": "^3.8.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
-    "bluebird": "^3.7.2",
     "chokidar": "^3.3.1",
     "docker-file-parser": "^1.0.4",
     "dockerode": "^2.5.6",
@@ -62,7 +65,6 @@
     "shell-escape": "^0.2.0",
     "shell-quote": "^1.7.2",
     "strict-event-emitter-types": "^2.0.0",
-    "ts-node": "^8.6.2",
     "typed-error": "^3.2.0"
   },
   "husky": {

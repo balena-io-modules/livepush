@@ -1,4 +1,4 @@
-import * as Docker from 'dockerode';
+import Docker from 'dockerode';
 import { fs } from 'mz';
 import * as path from 'path';
 import * as Url from 'url';

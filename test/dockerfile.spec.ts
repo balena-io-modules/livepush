@@ -12,20 +12,18 @@ limitations under the License.
 */
 import 'mocha';
 
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import { assert, expect, use as chaiUse } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import { fs } from 'mz';
 import * as path from 'path';
 
-chai.use(chaiAsPromised);
-
-const { assert, expect } = chai;
+chaiUse(chaiAsPromised);
 
 import { DockerfileParseError, UnsupportedError } from '../lib';
 import { isChildPath, StageDependentActionGroup } from '../lib/action-group';
 import Dockerfile from '../lib/dockerfile';
 
-const dockerfileContent: Dictionary<Buffer> = {};
+const dockerfileContent: Record<string, Buffer> = {};
 
 describe('Dockerfile', () => {
 	before(async () => {
