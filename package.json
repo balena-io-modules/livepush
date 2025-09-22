@@ -1,6 +1,6 @@
 {
   "name": "livepush",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "description": "Update your containers live!",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -71,5 +71,8 @@
     "hooks": {
       "pre-commit": "lint-staged"
     }
+  },
+  "versionist": {
+    "publishedAt": "2025-09-22T14:58:09.525Z"
   }
 }
