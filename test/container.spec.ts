@@ -163,7 +163,7 @@ describe('Containers', () => {
 			});
 
 			it('should correctly detect a stopped container', async () => {
-				await currentContainer.stop({ force: true });
+				await currentContainer.stop();
 				const container = Container.fromContainerId(
 					'',
 					docker,
@@ -392,7 +392,7 @@ describe('Containers', () => {
 						.to.have.property('0')
 						.that.has.length(1);
 
-					currentContainer.stop({ force: true }).then(() => {
+					currentContainer.stop().then(() => {
 						return container
 							.executeActionGroups(tasks[0], ['a.test'], [], {})
 							.then(() => {
@@ -720,12 +720,10 @@ describe('Containers', () => {
 				return Promise.all([
 					container
 						.executeActionGroups(tasks[0], ['a.test'], [], {})
-						.then(() => {
+						.then(async () => {
 							// We abuse a harmless event to signal the end
 							// of the test
-							currentContainer.attach(() => {
-								/* noop */
-							});
+							await currentContainer.attach({});
 						}),
 					getEventStreamPromise(false),
 				]);
@@ -761,12 +759,10 @@ describe('Containers', () => {
 					return Promise.all([
 						container
 							.executeActionGroups(tasks[0], ['a.test'], [], {})
-							.then(() => {
+							.then(async () => {
 								// We abuse a harmless event to signal the end
 								// of the test
-								currentContainer.attach(() => {
-									/* noop */
-								});
+								await currentContainer.attach({});
 							}),
 						getEventStreamPromise(false),
 					]);
@@ -870,12 +866,10 @@ describe('Containers', () => {
 					return Promise.all([
 						container
 							.executeActionGroups(tasks[0], ['a.test'], [], {})
-							.then(() => {
+							.then(async () => {
 								// We abuse a harmless event to signal the end
 								// of the test
-								currentContainer.attach(() => {
-									/* noop */
-								});
+								await currentContainer.attach({});
 							}),
 						getEventStreamPromise(false),
 					]);
