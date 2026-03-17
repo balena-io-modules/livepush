@@ -1,4 +1,17 @@
 - commits:
+    - subject: "tests: Stop using url.parse"
+      hash: 08d80410a79936789d8e5bac0da7d36af4d5ab39
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        See: https://balena.fibery.io/Work/Project/2258
+        see: https://balena.fibery.io/Work/Project/2258
+      author: Thodoris Greasidis
+  version: 3.5.4
+  title: ""
+  date: 2026-03-17T15:36:18.931Z
+- commits:
     - subject: Update dependencies
       hash: 3460715eed8a7721079cb0235425c0ab60909164
       body: ""

@@ -1,6 +1,6 @@
 {
   "name": "livepush",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "description": "Update your containers live!",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -73,6 +73,6 @@
     }
   },
   "versionist": {
-    "publishedAt": "2026-03-17T15:05:59.252Z"
+    "publishedAt": "2026-03-17T15:36:19.025Z"
   }
 }
