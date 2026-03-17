@@ -1,7 +1,6 @@
 import Docker from 'dockerode';
 import { fs } from 'mz';
 import * as path from 'path';
-import * as Url from 'url';
 
 let dockerOpts: Docker.DockerOptions;
 if (process.env.CIRCLECI != null) {
@@ -13,7 +12,7 @@ if (process.env.CIRCLECI != null) {
 		path.join(process.env.DOCKER_CERT_PATH!, f),
 	);
 	[ca, cert, key] = certs.map(c => fs.readFileSync(c, 'utf-8'));
-	const parsed = Url.parse(process.env.DOCKER_HOST!);
+	const parsed = new URL(process.env.DOCKER_HOST!);
 
 	dockerOpts = {
 		host: 'https://' + parsed.hostname,
